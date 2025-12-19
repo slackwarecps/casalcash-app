@@ -8,7 +8,7 @@ export const initialExpenses: Expense[] = [
     paidBy: 'Fabão',
     split: '50/50',
     category: 'Moradia',
-    date: new Date(),
+    date: new Date('2024-07-10T10:00:00Z'),
   },
   {
     id: '2',
@@ -17,7 +17,7 @@ export const initialExpenses: Expense[] = [
     paidBy: 'Tati',
     split: '50/50',
     category: 'Alimentação',
-    date: new Date(),
+    date: new Date('2024-07-08T20:00:00Z'),
   },
     {
     id: '3',
@@ -26,7 +26,7 @@ export const initialExpenses: Expense[] = [
     paidBy: 'Tati',
     split: '100% Tati',
     category: 'Pet',
-    date: new Date(),
+    date: new Date('2024-07-05T15:00:00Z'),
   },
   {
     id: '4',
@@ -35,7 +35,7 @@ export const initialExpenses: Expense[] = [
     paidBy: 'Fabão',
     split: '50/50',
     category: 'Moradia',
-    date: new Date(),
+    date: new Date('2024-07-01T12:00:00Z'),
   },
 ];
 
@@ -48,7 +48,7 @@ export const initialLoans: Loan[] = [
         borrower: 'Tati',
         installments: 10,
         paidInstallments: 3,
-        date: new Date(new Date().setMonth(new Date().getMonth() - 4)),
+        date: new Date('2024-03-15T18:00:00Z'),
     },
     {
         id: 'l2',
@@ -58,6 +58,6 @@ export const initialLoans: Loan[] = [
         borrower: 'Fabão',
         installments: 5,
         paidInstallments: 1,
-        date: new Date(new Date().setMonth(new Date().getMonth() - 2)),
+        date: new Date('2024-05-20T11:00:00Z'),
     }
 ];
