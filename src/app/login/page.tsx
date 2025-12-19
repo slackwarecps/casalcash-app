@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Email inválido.' }).default('teste@casal.cash'),
+  email: z.string().email({ message: 'Email inválido.' }).default('teste@teste.com.br'),
   password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres.' }).default('teste123'),
 });
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: 'teste@casal.cash',
+      email: 'teste@teste.com.br',
       password: 'teste123',
     },
   });
