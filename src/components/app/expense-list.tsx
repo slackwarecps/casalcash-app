@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Pencil } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -43,19 +44,20 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                 <TableHead>Descrição</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Pago por</TableHead>
-                <TableHead className="text-right">Ação</TableHead>
+                <TableHead>Rateio</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
+                    <TableCell colSpan={5} className="text-center">
                       <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                     </TableCell>
                   </TableRow>
                 ) : expenses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={5} className="text-center">
                     Nenhuma despesa registrada para este mês.
                   </TableCell>
                 </TableRow>
@@ -74,7 +76,15 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                           {expense.paidBy}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                        <Badge variant="outline">{expense.split}</Badge>
+                    </TableCell>
                     <TableCell className="text-right">
+                       <Link href={`/expenses/${expense.id}`}>
+                         <Button variant="ghost" size="icon" asChild>
+                           <span><Pencil className="h-4 w-4" /></span>
+                         </Button>
+                       </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon">
