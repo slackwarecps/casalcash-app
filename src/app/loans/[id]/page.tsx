@@ -26,19 +26,35 @@ export default function LoanDetailPage() {
     if (id) {
       const foundLoan = initialLoans.find(l => l.id === id);
       // @ts-ignore
-      setLoan(foundLoan || null);
+      setLoan(foundLoan ? { ...foundLoan, installmentDetails: [...foundLoan.installmentDetails] } : null);
     }
   }, [id]);
+  
+  const handleStatusChange = (installmentId: string, isPaid: boolean) => {
+    setLoan(prevLoan => {
+      if (!prevLoan) return null;
+
+      const newInstallmentDetails = prevLoan.installmentDetails.map(inst => {
+        if (inst.id === installmentId) {
+          return { ...inst, isPaid: isPaid, paidDate: isPaid ? new Date() : null };
+        }
+        return inst;
+      });
+
+      const newPaidInstallmentsCount = newInstallmentDetails.filter(inst => inst.isPaid).length;
+
+      return {
+        ...prevLoan,
+        installmentDetails: newInstallmentDetails,
+        paidInstallments: newPaidInstallmentsCount,
+      };
+    });
+  };
 
   if (!loan) {
     return <div>Carregando...</div>;
   }
   
-  const handleStatusChange = (installmentId: string, isPaid: boolean) => {
-    // This will be implemented in the next step
-    console.log(`Installment ${installmentId} status changed to ${isPaid}`);
-  };
-
   const progress = (loan.paidInstallments / loan.installments) * 100;
 
   return (
