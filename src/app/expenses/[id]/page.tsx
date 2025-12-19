@@ -32,6 +32,7 @@ const formSchema = z.object({
   split: z.enum(['50/50', '100% Fabão', '100% Tati']),
   category: z.enum(categories),
   date: z.date(),
+  tipoDespesa: z.enum(['pontual', 'recorrente']),
 });
 
 export default function EditExpensePage() {
@@ -57,6 +58,7 @@ export default function EditExpensePage() {
       split: '50/50',
       category: 'Outros',
       date: new Date(),
+      tipoDespesa: 'pontual',
     }
   });
 
@@ -65,6 +67,7 @@ export default function EditExpensePage() {
       form.reset({
         ...expenseData,
         date: (expenseData.date as Timestamp).toDate(),
+        tipoDespesa: expenseData.tipoDespesa || 'pontual',
       });
     }
   }, [expenseData, form]);
@@ -203,6 +206,28 @@ export default function EditExpensePage() {
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="tipoDespesa"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Despesa</FormLabel>
+                    <FormControl>
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-4">
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl><RadioGroupItem value="pontual" /></FormControl>
+                          <FormLabel className="font-normal">Variável (Pontual)</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl><RadioGroupItem value="recorrente" /></FormControl>
+                          <FormLabel className="font-normal">Fixa (Recorrente)</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="split"
