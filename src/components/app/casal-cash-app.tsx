@@ -21,9 +21,9 @@ export default function CasalCashApp() {
   
   const { toast } = useToast();
 
-  const addExpense = (expense: Omit<Expense, 'id' | 'date'>) => {
-    const newExpense = { ...expense, id: Date.now().toString(), date: new Date() };
-    setExpenses(prev => [newExpense, ...prev]);
+  const addExpense = (expense: Omit<Expense, 'id'>) => {
+    const newExpense = { ...expense, id: Date.now().toString() };
+    setExpenses(prev => [newExpense, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
     toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
   };
 
@@ -32,9 +32,9 @@ export default function CasalCashApp() {
     toast({ title: "Despesa removida.", variant: "destructive" });
   };
 
-  const addLoan = (loan: Omit<Loan, 'id' | 'date' | 'paidInstallments'>) => {
-    const newLoan = { ...loan, id: Date.now().toString(), date: new Date(), paidInstallments: 0 };
-    setLoans(prev => [newLoan, ...prev]);
+  const addLoan = (loan: Omit<Loan, 'id' | 'paidInstallments'>) => {
+    const newLoan = { ...loan, id: Date.now().toString(), paidInstallments: 0 };
+    setLoans(prev => [newLoan, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
     toast({ title: "Empréstimo adicionado!", description: `"${newLoan.description}" foi registrado.` });
   };
 

@@ -115,9 +115,6 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
                         initialFocus
                       />
                     </PopoverContent>
@@ -135,7 +132,9 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                     <FormLabel>Pago por</FormLabel>
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="Fabão">Fabão</SelectItem>
