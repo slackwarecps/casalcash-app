@@ -12,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, isWithinInterval, addMonths } from 'date-fns';
 import {
   useFirestore,
-  useAuth,
   useUser,
   useCollection,
   useMemoFirebase,
@@ -20,7 +19,7 @@ import {
   deleteDocumentNonBlocking,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, query, where, doc, Timestamp, getDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -34,7 +33,7 @@ export default function CasalCashApp() {
   
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
 
   // Ensure the couple document exists for security rules
   useEffect(() => {
@@ -46,15 +45,7 @@ export default function CasalCashApp() {
       const docSnap = await getDoc(coupleDocRef);
       if (!docSnap.exists()) {
         try {
-          // Create the document with the current user as a member
-          // In a real app, you'd add both users. For now, just one is enough.
-          const userIds = ['teste@casal.cash']; // Hardcoding for simplicity, would be dynamic
-          const members: { [key: string]: string } = {};
-
-          if(user.uid) {
-            members[user.uid] = 'owner';
-          }
-          
+          const members: { [key: string]: string } = { [user.uid]: 'owner' };
           await setDoc(coupleDocRef, { members });
         } catch (e) {
           console.error("Error creating couple document:", e);
@@ -62,8 +53,8 @@ export default function CasalCashApp() {
       } else {
         // If doc exists, ensure current user is a member
         const coupleData = docSnap.data();
-        if (user.uid && !coupleData.members[user.uid]) {
-            const updatedMembers = { ...coupleData.members, [user.uid]: 'owner' };
+        if (user.uid && (!coupleData.members || !coupleData.members[user.uid])) {
+            const updatedMembers = { ...(coupleData.members || {}), [user.uid]: 'owner' };
             await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
         }
       }
@@ -216,8 +207,8 @@ export default function CasalCashApp() {
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses || isUserLoading} />
-          <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans || isUserLoading} />
+          <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses} />
+          <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans} />
         </div>
       </div>
 
