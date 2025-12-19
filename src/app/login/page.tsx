@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { initiateEmailSignIn, useAuth, useUser } from '@/firebase';
 import { useEffect, useState } from 'react';
@@ -28,7 +27,6 @@ export default function LoginPage() {
       password: 'teste123',
     },
   });
-  const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -44,11 +42,15 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setAuthError(null);
+    if (!auth) {
+        setAuthError('Serviço de autenticação não está disponível.');
+        setIsLoading(false);
+        return;
+    }
     try {
-      if (auth) {
+        // Here we use await because we want to catch the error on this screen
         await initiateEmailSignIn(auth, values.email, values.password);
         // The useEffect will handle the redirect on successful login
-      }
     } catch (error) {
       let errorMessage = 'Ocorreu um erro ao tentar fazer login.';
       if (error instanceof FirebaseError) {
@@ -57,7 +59,8 @@ export default function LoginPage() {
          }
       }
       setAuthError(errorMessage);
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   }
 

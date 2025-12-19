@@ -40,6 +40,7 @@ export default function AppHeader({
   const app = useFirebaseApp();
 
   const handleSignOut = async () => {
+    if (!app) return;
     const auth = getAuth(app);
     await signOut(auth);
     router.push('/login');
@@ -64,7 +65,7 @@ export default function AppHeader({
                 <LogOut className="h-4 w-4" />
             </Button>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <ToggleGroup
             type="single"
             value={currentUser}
