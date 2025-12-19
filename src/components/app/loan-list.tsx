@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { HandCoins, Loader2, Trash2 } from 'lucide-react';
+import { HandCoins, Loader2, Trash2, ChevronRight } from 'lucide-react';
 import type { Loan } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -33,10 +33,10 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
     <Card>
       <CardHeader>
         <CardTitle>Empréstimos e Parcelas</CardTitle>
-        <CardDescription>Controle de empréstimos e compras parceladas. Clique em um item para ver detalhes.</CardDescription>
+        <CardDescription>Controle de empréstimos e compras parceladas.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-96">
+        <ScrollArea className="h-[28.5rem]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -48,13 +48,13 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
             <TableBody>
               {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={3} className="text-center h-24">
                       <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                     </TableCell>
                   </TableRow>
                 ) : loans.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center">
+                  <TableCell colSpan={3} className="text-center h-24">
                     Nenhum empréstimo registrado.
                   </TableCell>
                 </TableRow>
@@ -65,38 +65,40 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
                   const isPaidOff = loan.paidInstallments >= loan.installments;
 
                   return (
-                    <TableRow key={loan.id} className="cursor-pointer">
+                    <TableRow key={loan.id}>
                       <TableCell>
-                        <Link href={`/loans/${loan.id}`} className="block">
-                          <div className="font-medium">{loan.description}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {loan.borrower} deve a {loan.lender}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatCurrency(installmentValue)} / mês
-                          </div>
-                        </Link>
+                        <div className="font-medium">{loan.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {loan.borrower} deve a {loan.lender}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatCurrency(installmentValue)} / mês
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Link href={`/loans/${loan.id}`} className="block">
-                          <div className="flex flex-col gap-2">
-                            <Progress value={progress} className="w-full" />
-                            <span className="text-xs text-muted-foreground">
-                              {loan.paidInstallments} de {loan.installments} parcelas pagas
-                            </span>
-                          </div>
-                        </Link>
+                        <div className="flex flex-col gap-2">
+                          <Progress value={progress} className="w-full" />
+                          <span className="text-xs text-muted-foreground">
+                            {loan.paidInstallments} de {loan.installments} parcelas pagas
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right space-x-1">
+                      <TableCell className="text-right space-x-1 whitespace-nowrap">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={(e) => { e.stopPropagation(); onPayInstallment(loan.id); }}
                           disabled={isPaidOff}
+                          className="hidden sm:inline-flex"
                         >
                           <HandCoins className="h-4 w-4 mr-1" />
                           {isPaidOff ? 'Quitado' : 'Pagar Parcela'}
                         </Button>
+                         <Link href={`/loans/${loan.id}`} passHref>
+                           <Button variant="outline" size="icon" asChild>
+                            <a aria-label={`Ver detalhes de ${loan.description}`}><ChevronRight className="h-4 w-4" /></a>
+                           </Button>
+                        </Link>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>

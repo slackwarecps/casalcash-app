@@ -259,7 +259,7 @@ export default function CasalCashApp() {
   }, [filteredExpenses]);
 
   return (
-    <div className="flex flex-col gap-8 w-full">
+    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
       <AppHeader
         currentUser={currentUser}
         onUserChange={setCurrentUser}

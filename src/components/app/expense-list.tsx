@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Trash2, Pencil, CircleDollarSign, CheckCircle, XCircle } from 'lucide-react';
-import type { Expense } from '@/lib/types';
+import type { Expense, User } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import {
   AlertDialog,
@@ -24,7 +25,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import EditPaymentDialog from './edit-payment-dialog';
-import { useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -38,6 +39,12 @@ const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseListProps) {
   const [editingPayment, setEditingPayment] = useState<Expense | null>(null);
+  const [paidByFilter, setPaidByFilter] = useState<User | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'pontual' | 'recorrente'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -51,7 +58,6 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
         paymentDetails: details,
     };
     
-    // We need to convert Date objects back to Timestamps for Firestore
     if (updatedExpense.date instanceof Date) {
         updatedExpense.date = updatedExpense.date;
     }
@@ -60,13 +66,63 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
     toast({ title: 'Status do pagamento atualizado!' });
     setEditingPayment(null);
   };
+  
+  const filteredExpenses = useMemo(() => {
+    return expenses
+      .filter(expense => paidByFilter === 'all' || expense.paidBy === paidByFilter)
+      .filter(expense => typeFilter === 'all' || expense.tipoDespesa === typeFilter)
+      .filter(expense => {
+        if (statusFilter === 'all') return true;
+        return statusFilter === 'paid' ? expense.isPaid : !expense.isPaid;
+      });
+  }, [expenses, paidByFilter, typeFilter, statusFilter]);
+
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+  const paginatedExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page
+  };
 
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle>Lista de Despesas</CardTitle>
-          <CardDescription>Todas as despesas registradas no mês selecionado.</CardDescription>
+          <CardDescription>
+            {isLoading ? 'Carregando despesas...' : `Exibindo ${paginatedExpenses.length} de ${filteredExpenses.length} despesas.`}
+          </CardDescription>
+          <div className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Select value={paidByFilter} onValueChange={(value: User | 'all') => setPaidByFilter(value)}>
+              <SelectTrigger><SelectValue placeholder="Filtrar por pessoa..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="Fabão">Fabão</SelectItem>
+                <SelectItem value="Tati">Tati</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={(value: 'all' | 'pontual' | 'recorrente') => setTypeFilter(value)}>
+              <SelectTrigger><SelectValue placeholder="Filtrar por tipo..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
+                <SelectItem value="pontual">Variável</SelectItem>
+                <SelectItem value="recorrente">Fixa</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={(value: 'all' | 'paid' | 'unpaid') => setStatusFilter(value)}>
+              <SelectTrigger><SelectValue placeholder="Filtrar por status..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="paid">Pago</SelectItem>
+                <SelectItem value="unpaid">Não Pago</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-96">
@@ -84,18 +140,18 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
               <TableBody>
                 {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">
+                      <TableCell colSpan={6} className="text-center h-24">
                         <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                       </TableCell>
                     </TableRow>
-                  ) : expenses.length === 0 ? (
+                  ) : paginatedExpenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">
-                      Nenhuma despesa registrada para este mês.
+                    <TableCell colSpan={6} className="text-center h-24">
+                      Nenhuma despesa encontrada para este mês ou filtro.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  expenses.map((expense) => (
+                  paginatedExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                        <TableCell>
                         {expense.isPaid ? (
@@ -106,7 +162,7 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{expense.description}</div>
-                        <div className="text-sm text-muted-foreground flex gap-1 items-center">
+                        <div className="text-sm text-muted-foreground flex flex-wrap gap-1 items-center">
                           <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} -</span>
                           <Badge variant="outline">{expense.category}</Badge>
                           <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
@@ -123,7 +179,7 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                       <TableCell>
                           <Badge variant="outline">{expense.split}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
                          <Button variant="ghost" size="icon" onClick={() => setEditingPayment(expense)}>
                             <CircleDollarSign className="h-4 w-4" />
                          </Button>
@@ -160,6 +216,40 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
             </Table>
           </ScrollArea>
         </CardContent>
+         <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Itens por pág:</span>
+              <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Próximo
+              </Button>
+            </div>
+        </CardFooter>
       </Card>
       {editingPayment && (
         <EditPaymentDialog
