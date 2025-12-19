@@ -27,8 +27,8 @@ const formSchema = z.object({
   paidBy: z.enum(['Fabão', 'Tati']),
   split: z.enum(['50/50', '100% Fabão', '100% Tati']),
   category: z.enum(categories),
-  date: z.date({
-    errorMap: (issue, ctx) => ({ message: 'Data inválida. Use o formato DD/MM/AAAA.' }),
+  date: z.string().refine((val) => !isNaN(parse(val, 'dd/MM/yyyy', new Date()).valueOf()), {
+    message: "Data inválida. Use o formato DD/MM/AAAA.",
   }),
   tipoDespesa: z.enum(['pontual', 'recorrente']),
 });
@@ -49,22 +49,13 @@ export default function EditExpensePage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      description: '',
-      amount: 0,
-      paidBy: 'Fabão',
-      split: '50/50',
-      category: 'Outros',
-      date: new Date(),
-      tipoDespesa: 'pontual',
-    }
   });
 
   useEffect(() => {
     if (expenseData) {
       form.reset({
         ...expenseData,
-        date: (expenseData.date as Timestamp).toDate(),
+        date: format((expenseData.date as Timestamp).toDate(), 'dd/MM/yyyy'),
         tipoDespesa: expenseData.tipoDespesa || 'pontual',
       });
     }
@@ -76,7 +67,7 @@ export default function EditExpensePage() {
     const updatedExpense = {
         ...expenseData, // preserve original data like members
         ...values,
-        date: Timestamp.fromDate(values.date),
+        date: Timestamp.fromDate(parse(values.date, 'dd/MM/yyyy', new Date())),
     };
 
     setDocumentNonBlocking(expenseDocRef, updatedExpense, { merge: true });
@@ -141,21 +132,7 @@ export default function EditExpensePage() {
                       <FormControl>
                         <Input
                           placeholder="DD/MM/AAAA"
-                          {...{...field, value: field.value ? format(field.value, 'dd/MM/yyyy') : '',
-                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                              const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                              if (!isNaN(date.valueOf())) {
-                                field.onChange(date);
-                              }
-                           }
-                          }}
-                          onBlur={(e) => {
-                            const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                            if (!isNaN(date.valueOf())) {
-                              field.onChange(date);
-                            }
-                            field.onBlur();
-                          }}
+                          {...field}
                         />
                       </FormControl>
                     <FormMessage />

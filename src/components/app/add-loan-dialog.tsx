@@ -24,8 +24,8 @@ const formSchema = z.object({
   lender: z.enum(['Fabão', 'Tati']),
   borrower: z.enum(['Fabão', 'Tati']),
   installments: z.coerce.number().int().min(1, { message: 'Mínimo de 1 parcela.' }),
-  date: z.date({
-    errorMap: (issue, ctx) => ({ message: 'Data inválida. Use o formato DD/MM/AAAA.' }),
+  date: z.string().refine((val) => !isNaN(parse(val, 'dd/MM/yyyy', new Date()).valueOf()), {
+    message: "Data inválida. Use o formato DD/MM/AAAA.",
   }),
 }).refine(data => data.lender !== data.borrower, {
   message: "Quem empresta e quem pega emprestado não podem ser a mesma pessoa.",
@@ -41,12 +41,16 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
       lender: 'Fabão',
       borrower: 'Tati',
       installments: 1,
-      date: new Date(),
+      date: format(new Date(), 'dd/MM/yyyy'),
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddLoan(values);
+    const loanData = {
+        ...values,
+        date: parse(values.date, 'dd/MM/yyyy', new Date())
+    }
+    onAddLoan(loanData);
     form.reset();
     onOpenChange(false);
   }
@@ -110,21 +114,7 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
                     <FormControl>
                       <Input
                         placeholder="DD/MM/AAAA"
-                        {...{...field, value: field.value ? format(field.value, 'dd/MM/yyyy') : '',
-                          onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                            const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                            if (!isNaN(date.valueOf())) {
-                              field.onChange(date);
-                            }
-                         }
-                        }}
-                        onBlur={(e) => {
-                          const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                          if (!isNaN(date.valueOf())) {
-                            field.onChange(date);
-                          }
-                          field.onBlur();
-                        }}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
