@@ -1,0 +1,381 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user within the CasalCash application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    },
+    "Expense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents an expense logged within the CasalCash application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Expense entity."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date the expense was incurred.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the expense."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the expense."
+        },
+        "payerId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Expense) The user who paid the expense."
+        },
+        "splitType": {
+          "type": "string",
+          "description": "The split type of the expense, e.g., 'individual' or 'shared'."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to Category. (Relationship: Category 1:N Expense) The category of expense."
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "description",
+        "amount",
+        "payerId",
+        "splitType",
+        "categoryId"
+      ]
+    },
+    "Loan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Loan",
+      "type": "object",
+      "description": "Represents a loan between users within the CasalCash application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Loan entity."
+        },
+        "lenderId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Loan) The user who lent the money."
+        },
+        "borrowerId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Loan) The user who borrowed the money."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount of the loan."
+        },
+        "interestRate": {
+          "type": "number",
+          "description": "The interest rate of the loan."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The date the loan was initiated.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The date the loan is expected to be fully repaid.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "lenderId",
+        "borrowerId",
+        "amount",
+        "interestRate",
+        "startDate",
+        "endDate"
+      ]
+    },
+    "LoanInstallment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LoanInstallment",
+      "type": "object",
+      "description": "Represents a single installment payment for a loan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LoanInstallment entity."
+        },
+        "loanId": {
+          "type": "string",
+          "description": "Reference to Loan. (Relationship: Loan 1:N LoanInstallment) The loan this installment belongs to."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date the installment is due.",
+          "format": "date-time"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the installment."
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "The date the installment was paid.",
+          "format": "date-time"
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The payment status of the installment (e.g., paid, pending, overdue)."
+        }
+      },
+      "required": [
+        "id",
+        "loanId",
+        "dueDate",
+        "amount",
+        "paymentStatus"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a category for expenses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., 'Food', 'Rent', 'Utilities')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the category."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "MonthlyConsolidated": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MonthlyConsolidated",
+      "type": "object",
+      "description": "Represents a consolidated financial report for a specific month and user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MonthlyConsolidated entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N MonthlyConsolidated) The user this report is for."
+        },
+        "month": {
+          "type": "number",
+          "description": "The month of the report (1-12)."
+        },
+        "year": {
+          "type": "number",
+          "description": "The year of the report."
+        },
+        "totalExpenses": {
+          "type": "number",
+          "description": "The total expenses for the month."
+        },
+        "totalLoans": {
+          "type": "number",
+          "description": "The total loan amount for the month."
+        },
+        "amountOwed": {
+          "type": "number",
+          "description": "The amount owed to this user."
+        },
+        "amountOwing": {
+          "type": "number",
+          "description": "The amount this user owes."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "month",
+        "year",
+        "totalExpenses",
+        "totalLoans",
+        "amountOwed",
+        "amountOwing"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information. Path-based ownership ensures only the user can access their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores expense categories.  Categories are globally accessible.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique identifier of the category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/couples/{coupleId}",
+        "definition": {
+          "entityName": "Couple",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores couple information, including a 'members' map containing the UIDs of the two users and their roles.  This document links all shared data.",
+          "params": [
+            {
+              "name": "coupleId",
+              "description": "The unique identifier of the couple."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/couples/{coupleId}/expenses/{expenseId}",
+        "definition": {
+          "entityName": "Expense",
+          "schema": {
+            "$ref": "#/backend/entities/Expense"
+          },
+          "description": "Stores expense records for the couple. Includes denormalized 'members' map from the couple document for authorization independence.",
+          "params": [
+            {
+              "name": "coupleId",
+              "description": "The unique identifier of the couple."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique identifier of the expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/couples/{coupleId}/loans/{loanId}",
+        "definition": {
+          "entityName": "Loan",
+          "schema": {
+            "$ref": "#/backend/entities/Loan"
+          },
+          "description": "Stores loan records between the couple. Includes denormalized 'members' map from the couple document for authorization independence.",
+          "params": [
+            {
+              "name": "coupleId",
+              "description": "The unique identifier of the couple."
+            },
+            {
+              "name": "loanId",
+              "description": "The unique identifier of the loan."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/couples/{coupleId}/loans/{loanId}/installments/{installmentId}",
+        "definition": {
+          "entityName": "LoanInstallment",
+          "schema": {
+            "$ref": "#/backend/entities/LoanInstallment"
+          },
+          "description": "Stores loan installment records for the loans. Access is controlled through the parent loan document.",
+          "params": [
+            {
+              "name": "coupleId",
+              "description": "The unique identifier of the couple."
+            },
+            {
+              "name": "loanId",
+              "description": "The unique identifier of the loan."
+            },
+            {
+              "name": "installmentId",
+              "description": "The unique identifier of the installment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/couples/{coupleId}/monthlyConsolidated/{monthlyConsolidatedId}",
+        "definition": {
+          "entityName": "MonthlyConsolidated",
+          "schema": {
+            "$ref": "#/backend/entities/MonthlyConsolidated"
+          },
+          "description": "Stores monthly consolidated reports for the couple. Includes denormalized 'members' map from the couple document for authorization independence.",
+          "params": [
+            {
+              "name": "coupleId",
+              "description": "The unique identifier of the couple."
+            },
+            {
+              "name": "monthlyConsolidatedId",
+              "description": "The unique identifier of the monthly consolidated report."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to facilitate a shared financial management application for a couple (Fabão and Tati), focusing on expense tracking, loan management, and consolidated reporting. The core principle is Authorization Independence, which is achieved by denormalizing data to avoid `get()` calls in security rules, thus ensuring atomicity for transactions and batch operations. This also enhances debuggability.  The structure is segregated to maintain homogeneous security postures within each collection. Access is modeled primarily through path-based ownership and membership maps where necessary.\n\nSpecifically, each user has their own profile stored in `/users/{userId}`. The application is designed to be used by a couple, and the relationship between them and their shared financial data (expenses, loans, and consolidated reports) will be modeled using a 'couple' document. This document will contain a `members` map listing both users with their roles (e.g., 'owner'). The unique ID of this document will serve as a link for accessing all shared data.\n\nExpenses, Loans, and MonthlyConsolidated documents are stored in subcollections under the `/couples/{coupleId}` document. This enforces a clear ownership model: each user can only access data associated with the couple they belong to. Moreover, the payerId, lenderId, and borrowerId in the Expense and Loan documents reference UserProfile documents. The Category documents are stored in the root collection `/categories`. Since those are predefined, they can be globally accessed.\n\nTo support QAPs (Rules are not Filters), segregation is employed. Data with different access requirements (e.g., public vs. private) are stored in separate collections. The path-based ownership ensures that listing operations can be secured by simply checking the `request.auth.uid` against the `userId` in the path or the `members` map in the `couple` document. \n\nDenormalization is used to copy authorization context into subcollections. For instance, the `couple` document's `members` map is copied into each document within the `/couples/{coupleId}/expenses` and `/couples/{coupleId}/loans` subcollections. This ensures that security rules can validate user access without needing to perform expensive `get()` operations, which can break atomicity.\n"
+  }
+}
