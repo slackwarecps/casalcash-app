@@ -13,11 +13,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { categories } from '@/lib/types';
-import { format, parse } from 'date-fns';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { ArrowLeft, Loader2, CalendarIcon } from 'lucide-react';
 import { useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { ptBR } from 'date-fns/locale';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -27,8 +31,8 @@ const formSchema = z.object({
   paidBy: z.enum(['Fabão', 'Tati']),
   split: z.enum(['50/50', '100% Fabão', '100% Tati']),
   category: z.enum(categories),
-  date: z.string().refine((val) => !isNaN(parse(val, 'dd/MM/yyyy', new Date()).valueOf()), {
-    message: "Data inválida. Use o formato DD/MM/AAAA.",
+  date: z.date({
+    required_error: "A data da despesa é obrigatória.",
   }),
   tipoDespesa: z.enum(['pontual', 'recorrente']),
 });
@@ -55,7 +59,7 @@ export default function EditExpensePage() {
     if (expenseData) {
       form.reset({
         ...expenseData,
-        date: format((expenseData.date as Timestamp).toDate(), 'dd/MM/yyyy'),
+        date: (expenseData.date as Timestamp).toDate(),
         tipoDespesa: expenseData.tipoDespesa || 'pontual',
       });
     }
@@ -67,7 +71,7 @@ export default function EditExpensePage() {
     const updatedExpense = {
         ...expenseData, // preserve original data like members
         ...values,
-        date: Timestamp.fromDate(parse(values.date, 'dd/MM/yyyy', new Date())),
+        date: Timestamp.fromDate(values.date),
     };
 
     setDocumentNonBlocking(expenseDocRef, updatedExpense, { merge: true });
@@ -127,14 +131,40 @@ export default function EditExpensePage() {
                 control={form.control}
                 name="date"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Data da despesa</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="DD/MM/AAAA"
-                          {...field}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: ptBR })
+                            ) : (
+                              <span>Escolha uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          locale={ptBR}
                         />
-                      </FormControl>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

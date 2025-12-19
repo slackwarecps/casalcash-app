@@ -11,7 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { categories, Category, Expense, SplitType, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { ptBR } from 'date-fns/locale';
 
 interface AddExpenseDialogProps {
   isOpen: boolean;
@@ -25,8 +29,8 @@ const formSchema = z.object({
   paidBy: z.enum(['Fabão', 'Tati']),
   split: z.enum(['50/50', '100% Fabão', '100% Tati']),
   category: z.enum(categories),
-  date: z.string().refine((val) => !isNaN(parse(val, 'dd/MM/yyyy', new Date()).valueOf()), {
-    message: "Data inválida. Use o formato DD/MM/AAAA.",
+  date: z.date({
+    required_error: "A data da despesa é obrigatória.",
   }),
 });
 
@@ -39,14 +43,13 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
       paidBy: 'Fabão',
       split: '50/50',
       category: 'Outros',
-      date: format(new Date(), 'dd/MM/yyyy'),
+      date: new Date(),
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newExpenseData = {
       ...values,
-      date: parse(values.date, 'dd/MM/yyyy', new Date()),
       isPaid: false,
       paymentDetails: '',
     };
@@ -91,20 +94,46 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
               )}
             />
              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data da despesa</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="DD/MM/AAAA"
-                        {...field}
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data da despesa</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP", { locale: ptBR })
+                          ) : (
+                            <span>Escolha uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        locale={ptBR}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
             <div className="grid grid-cols-2 gap-4">
                <FormField
