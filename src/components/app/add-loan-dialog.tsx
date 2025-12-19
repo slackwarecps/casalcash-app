@@ -9,12 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loan, User } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
-import { ptBR } from 'date-fns/locale';
+import { parse } from 'date-fns';
 
 interface AddLoanDialogProps {
   isOpen: boolean;
@@ -28,8 +23,8 @@ const formSchema = z.object({
   lender: z.enum(['Fabão', 'Tati']),
   borrower: z.enum(['Fabão', 'Tati']),
   installments: z.coerce.number().int().min(1, { message: 'Mínimo de 1 parcela.' }),
-  date: z.date({
-    required_error: "A data do empréstimo é obrigatória.",
+  date: z.string().refine(val => /^\d{2}\/\d{2}\/\d{4}$/.test(val), {
+    message: "Data deve estar no formato dd/mm/yyyy",
   }),
 }).refine(data => data.lender !== data.borrower, {
   message: "Quem empresta e quem pega emprestado não podem ser a mesma pessoa.",
@@ -45,12 +40,13 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
       lender: 'Fabão',
       borrower: 'Tati',
       installments: 1,
-      date: new Date(),
+      date: new Date().toLocaleDateString('pt-BR'),
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddLoan(values);
+    const parsedDate = parse(values.date, 'dd/MM/yyyy', new Date());
+    onAddLoan({ ...values, date: parsedDate });
     form.reset();
     onOpenChange(false);
   }
@@ -109,40 +105,11 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
               control={form.control}
               name="date"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data da despesa</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                          ) : (
-                            <span>Escolha uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        locale={ptBR}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <FormItem>
+                  <FormLabel>Data</FormLabel>
+                  <FormControl>
+                    <Input placeholder="dd/mm/yyyy" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

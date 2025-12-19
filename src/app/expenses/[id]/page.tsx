@@ -13,15 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { categories } from '@/lib/types';
-import { format } from 'date-fns';
-import { ArrowLeft, Loader2, CalendarIcon } from 'lucide-react';
+import { parse } from 'date-fns';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { ptBR } from 'date-fns/locale';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -31,8 +27,8 @@ const formSchema = z.object({
   paidBy: z.enum(['Fabão', 'Tati']),
   split: z.enum(['50/50', '100% Fabão', '100% Tati']),
   category: z.enum(categories),
-  date: z.date({
-    required_error: "A data da despesa é obrigatória.",
+  date: z.string().refine(val => /^\d{2}\/\d{2}\/\d{4}$/.test(val), {
+    message: "Data deve estar no formato dd/mm/yyyy",
   }),
   tipoDespesa: z.enum(['pontual', 'recorrente']),
 });
@@ -59,7 +55,7 @@ export default function EditExpensePage() {
     if (expenseData) {
       form.reset({
         ...expenseData,
-        date: (expenseData.date as Timestamp).toDate(),
+        date: (expenseData.date as Timestamp).toDate().toLocaleDateString('pt-BR'),
         tipoDespesa: expenseData.tipoDespesa || 'pontual',
       });
     }
@@ -67,11 +63,13 @@ export default function EditExpensePage() {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!expenseDocRef || !expenseData) return;
+    
+    const parsedDate = parse(values.date, 'dd/MM/yyyy', new Date());
 
     const updatedExpense = {
         ...expenseData, // preserve original data like members
         ...values,
-        date: Timestamp.fromDate(values.date),
+        date: Timestamp.fromDate(parsedDate),
     };
 
     setDocumentNonBlocking(expenseDocRef, updatedExpense, { merge: true });
@@ -114,61 +112,34 @@ export default function EditExpensePage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data da despesa</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+               <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Valor</FormLabel>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP", { locale: ptBR })
-                            ) : (
-                              <span>Escolha uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                        <Input type="number" step="0.01" {...field} />
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data</FormLabel>
+                      <FormControl>
+                        <Input placeholder="dd/mm/yyyy" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
