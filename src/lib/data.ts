@@ -47,17 +47,27 @@ export const initialLoans: Loan[] = [
         lender: 'Fabão',
         borrower: 'Tati',
         installments: 24,
-        paidInstallments: 24, // Started Dec 2023, ends Nov 2025. All paid.
+        paidInstallments: 24, // Starts Dec 2023, ends Nov 2025. All paid.
         date: new Date('2023-12-04T10:00:00Z'),
     },
     {
         id: 'l2',
         description: 'Cama Queen',
-        totalAmount: 4000,
+        totalAmount: 3047.60, // 20 * 152.38
         lender: 'Fabão',
         borrower: 'Tati',
         installments: 20,
-        paidInstallments: 5, // Started Jul 2025, paid until Nov 2025 (Jul, Aug, Sep, Oct, Nov).
+        paidInstallments: 5, // Starts Jul 2025, paid until Nov 2025 (Jul, Aug, Sep, Oct, Nov).
         date: new Date('2025-07-04T10:00:00Z'),
+    },
+    {
+        id: 'l3',
+        description: 'Miami Tenis',
+        totalAmount: 2090.00, // 10 * 209.00
+        lender: 'Fabão',
+        borrower: 'Tati',
+        installments: 10,
+        paidInstallments: 2, // Starts Oct 2025, paid until Nov 2025 (Oct, Nov).
+        date: new Date('2025-10-04T10:00:00Z'),
     }
 ];
