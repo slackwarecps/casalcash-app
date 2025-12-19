@@ -13,7 +13,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface AddLoanDialogProps {
   isOpen: boolean;
@@ -27,7 +28,9 @@ const formSchema = z.object({
   lender: z.enum(['Fabão', 'Tati']),
   borrower: z.enum(['Fabão', 'Tati']),
   installments: z.coerce.number().int().min(1, { message: 'Mínimo de 1 parcela.' }),
-  date: z.date(),
+  date: z.date({
+    errorMap: (issue, ctx) => ({ message: 'Data inválida. Use o formato DD/MM/AAAA.' }),
+  }),
 }).refine(data => data.lender !== data.borrower, {
   message: "Quem empresta e quem pega emprestado não podem ser a mesma pessoa.",
   path: ["borrower"],
@@ -103,43 +106,47 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
                 />
             </div>
             <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data do empréstimo</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data da despesa</FormLabel>
+                    <div className="relative">
                       <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "dd/MM/yyyy")
-                          ) : (
-                            <span>Escolha uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                          <Input
+                            {...field}
+                            value={field.value ? format(field.value, 'dd/MM/yyyy') : ''}
+                            onChange={(e) => {
+                                const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
+                                if (!isNaN(date.getTime())) {
+                                    field.onChange(date);
+                                }
+                            }}
+                            placeholder="DD/MM/AAAA"
+                            className="pr-10"
+                          />
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" aria-label="Abrir calendário">
+                            <CalendarIcon className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            locale={ptBR}
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <div className="grid grid-cols-2 gap-4">
                <FormField
                 control={form.control}
