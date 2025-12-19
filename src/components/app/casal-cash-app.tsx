@@ -9,6 +9,7 @@ import LoanList from '@/components/app/loan-list';
 import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
 import ApplyRecurringExpensesDialog from '@/components/app/apply-recurring-expenses-dialog';
+import DeleteMonthDialog from '@/components/app/delete-month-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, isWithinInterval, addMonths, setDate } from 'date-fns';
 import {
@@ -21,6 +22,7 @@ import {
   setDocumentNonBlocking,
 } from '@/firebase';
 import { collection, doc, Timestamp, writeBatch } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -32,7 +34,9 @@ export default function CasalCashApp() {
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [isApplyRecurringDialogOpen, setIsApplyRecurringDialogOpen] = useState(false);
-  
+  const [isDeleteMonthDialogOpen, setIsDeleteMonthDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -47,20 +51,20 @@ export default function CasalCashApp() {
     if (!user) return null;
     return collection(firestore, 'couples', COUPLE_ID, 'loans');
   }, [firestore, user]);
-  
+
   const recurringExpensesCollection = useMemoFirebase(() => {
     if (!user) return null;
     return collection(firestore, 'couples', COUPLE_ID, 'recurringExpenses');
   }, [firestore, user]);
 
-  const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
+  const { data: expenses, isLoading: isLoadingExpenses, forceRefetch: refetchExpenses } = useCollection<Expense>(expensesCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
   const { data: recurringExpenses, isLoading: isLoadingRecurringExpenses } = useCollection<RecurringExpense>(recurringExpensesCollection);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     if (!expensesCollection || !user?.uid) return;
-    const newExpense = { 
-      ...expense, 
+    const newExpense = {
+      ...expense,
       date: Timestamp.fromDate(expense.date as Date),
       members: { [user.uid]: 'owner' }
     };
@@ -69,7 +73,7 @@ export default function CasalCashApp() {
   };
 
   const deleteExpense = (id: string) => {
-    if(!firestore) return;
+    if (!firestore) return;
     const expenseDocRef = doc(firestore, 'couples', COUPLE_ID, 'expenses', id);
     deleteDocumentNonBlocking(expenseDocRef);
     toast({ title: "Despesa removida.", variant: "destructive" });
@@ -80,8 +84,8 @@ export default function CasalCashApp() {
     const newLoanId = doc(collection(firestore, 'temp')).id;
     const installmentAmount = loan.totalAmount / loan.installments;
     const installmentDetails: Installment[] = [];
-    
-    for(let i=0; i<loan.installments; i++) {
+
+    for (let i = 0; i < loan.installments; i++) {
       installmentDetails.push({
         id: doc(collection(firestore, 'temp')).id,
         loanId: newLoanId,
@@ -94,14 +98,14 @@ export default function CasalCashApp() {
     }
 
     const newLoan: Loan = {
-       ...loan, 
-       id: newLoanId, 
-       paidInstallments: 0,
-       installmentDetails,
-       date: Timestamp.fromDate(loan.date as Date),
-       members: { [user.uid]: 'owner' }
+      ...loan,
+      id: newLoanId,
+      paidInstallments: 0,
+      installmentDetails,
+      date: Timestamp.fromDate(loan.date as Date),
+      members: { [user.uid]: 'owner' }
     };
-    
+
     const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', newLoanId);
     setDocumentNonBlocking(loanDocRef, newLoan, { merge: false });
 
@@ -118,7 +122,7 @@ export default function CasalCashApp() {
           inst.id === firstUnpaidInstallment!.id ? { ...inst, isPaid: true, paidDate: Timestamp.now() } : inst
         );
         const paidCount = updatedInstallments.filter(i => i.isPaid).length;
-        
+
         const updatedLoan = { ...loan, installmentDetails: updatedInstallments, paidInstallments: paidCount };
         const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', loanId);
         setDocumentNonBlocking(loanDocRef, updatedLoan, { merge: true });
@@ -129,7 +133,7 @@ export default function CasalCashApp() {
   };
 
   const deleteLoan = (id: string) => {
-    if(!firestore) return;
+    if (!firestore) return;
     const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', id);
     deleteDocumentNonBlocking(loanDocRef);
     toast({ title: "Empréstimo removido.", variant: "destructive" });
@@ -150,7 +154,7 @@ export default function CasalCashApp() {
 
     recurringExpenses.forEach(recExpense => {
       const expenseDate = setDate(selectedMonth, recExpense.dayOfMonth);
-      
+
       const newExpense: Omit<Expense, 'id'> = {
         description: recExpense.description,
         amount: recExpense.amount,
@@ -183,6 +187,47 @@ export default function CasalCashApp() {
     }
   };
   
+    const handleDeleteCurrentMonth = async () => {
+    if (!firestore || !expensesCollection) return;
+
+    setIsDeleting(true);
+    const start = startOfMonth(selectedMonth);
+    const end = endOfMonth(selectedMonth);
+    
+    const expensesToDelete = (expenses || []).filter(exp => {
+        const expDate = (exp.date as unknown as Timestamp).toDate();
+        return isWithinInterval(expDate, { start, end });
+    });
+
+    if (expensesToDelete.length === 0) {
+        toast({ title: "Nenhuma despesa para apagar", description: "O mês selecionado já está limpo."});
+        setIsDeleting(false);
+        setIsDeleteMonthDialogOpen(false);
+        return;
+    }
+
+    const batch = writeBatch(firestore);
+    expensesToDelete.forEach(expense => {
+        const docRef = doc(expensesCollection, expense.id);
+        batch.delete(docRef);
+    });
+
+    try {
+        await batch.commit();
+        toast({ title: "Mês zerado!", description: `Todas as ${expensesToDelete.length} despesas do mês foram removidas.` });
+        if (refetchExpenses) {
+            refetchExpenses();
+        }
+    } catch (error) {
+        console.error("Erro ao apagar despesas do mês:", error);
+        toast({ title: "Erro ao apagar", description: "Não foi possível remover as despesas do mês.", variant: "destructive" });
+    } finally {
+        setIsDeleting(false);
+        setIsDeleteMonthDialogOpen(false);
+    }
+  };
+
+
   const filteredExpenses = useMemo(() => {
     if (!expenses) return [];
     const start = startOfMonth(selectedMonth);
@@ -220,6 +265,7 @@ export default function CasalCashApp() {
         onAddExpense={() => setIsExpenseDialogOpen(true)}
         onAddLoan={() => setIsLoanDialogOpen(true)}
         onApplyRecurring={() => setIsApplyRecurringDialogOpen(true)}
+        onDeleteCurrentMonth={() => setIsDeleteMonthDialogOpen(true)}
         selectedMonth={selectedMonth}
         onMonthChange={setSelectedMonth}
       />
@@ -255,6 +301,13 @@ export default function CasalCashApp() {
         onOpenChange={setIsApplyRecurringDialogOpen}
         onConfirm={handleApplyRecurring}
         selectedMonth={selectedMonth}
+      />
+       <DeleteMonthDialog
+        isOpen={isDeleteMonthDialogOpen}
+        onOpenChange={setIsDeleteMonthDialogOpen}
+        onConfirm={handleDeleteCurrentMonth}
+        selectedMonth={selectedMonth}
+        isLoading={isDeleting}
       />
     </div>
   );

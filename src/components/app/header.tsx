@@ -1,6 +1,6 @@
 "use client"
 
-import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle } from 'lucide-react';
+import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { User } from '@/lib/types';
@@ -17,6 +17,7 @@ interface AppHeaderProps {
   onAddExpense: () => void;
   onAddLoan: () => void;
   onApplyRecurring: () => void;
+  onDeleteCurrentMonth: () => void;
   selectedMonth: Date;
   onMonthChange: (date: Date) => void;
 }
@@ -27,6 +28,7 @@ export default function AppHeader({
   onAddExpense,
   onAddLoan,
   onApplyRecurring,
+  onDeleteCurrentMonth,
   selectedMonth,
   onMonthChange
 }: AppHeaderProps) {
@@ -86,6 +88,10 @@ export default function AppHeader({
             Recorrentes
           </Button>
         </Link>
+         <Button variant="destructive" onClick={onDeleteCurrentMonth}>
+            <Trash2/>
+            Apagar Mês
+        </Button>
         <Button variant="ghost" size="icon" onClick={handleLogout}>
           <LogOut className="text-muted-foreground" />
         </Button>
