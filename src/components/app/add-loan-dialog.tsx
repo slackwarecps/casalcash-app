@@ -119,7 +119,7 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, "dd/MM/yyyy")
                           ) : (
                             <span>Escolha uma data</span>
                           )}
@@ -132,9 +132,6 @@ export default function AddLoanDialog({ isOpen, onOpenChange, onAddLoan }: AddLo
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date()
-                        }
                         initialFocus
                       />
                     </PopoverContent>

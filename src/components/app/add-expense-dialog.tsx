@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface AddExpenseDialogProps {
   isOpen: boolean;
@@ -102,7 +103,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(field.value, "dd/MM/yyyy")
                           ) : (
                             <span>Escolha uma data</span>
                           )}
