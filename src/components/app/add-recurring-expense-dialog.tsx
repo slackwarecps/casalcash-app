@@ -1,0 +1,177 @@
+'use client';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { categories, Category, RecurringExpense, SplitType, User } from '@/lib/types';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+interface AddRecurringExpenseDialogProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onAdd: (expense: Omit<RecurringExpense, 'id'>) => void;
+}
+
+const formSchema = z.object({
+  description: z.string().min(2, { message: 'Descrição deve ter pelo menos 2 caracteres.' }),
+  amount: z.coerce.number().positive({ message: 'Valor deve ser positivo.' }),
+  dayOfMonth: z.coerce.number().int().min(1).max(30, { message: 'Dia deve ser entre 1 e 30.'}),
+  paidBy: z.enum(['Fabão', 'Tati']),
+  split: z.enum(['50/50', '100% Fabão', '100% Tati']),
+  category: z.enum(categories),
+});
+
+export default function AddRecurringExpenseDialog({ isOpen, onOpenChange, onAdd }: AddRecurringExpenseDialogProps) {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: '',
+      amount: 0,
+      dayOfMonth: 1,
+      paidBy: 'Fabão',
+      split: '50/50',
+      category: 'Moradia',
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    onAdd(values);
+    form.reset();
+    onOpenChange(false);
+  }
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Adicionar Despesa Recorrente</DialogTitle>
+          <DialogDescription>Registre um novo gasto que se repete mensalmente.</DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Conta de Luz (CPFL)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Valor</FormLabel>
+                    <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                control={form.control}
+                name="dayOfMonth"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Dia do Mês</FormLabel>
+                    <FormControl>
+                        <Input type="number" step="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+               <FormField
+                control={form.control}
+                name="paidBy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pago por</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Fabão">Fabão</SelectItem>
+                          <SelectItem value="Tati">Tati</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
+            <FormField
+              control={form.control}
+              name="split"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Divisão da Despesa</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl><RadioGroupItem value="50/50" /></FormControl>
+                        <FormLabel className="font-normal">50/50 (Dividido)</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl><RadioGroupItem value="100% Fabão" /></FormControl>
+                        <FormLabel className="font-normal">100% Fabão</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl><RadioGroupItem value="100% Tati" /></FormControl>
+                        <FormLabel className="font-normal">100% Tati</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="submit">Adicionar Despesa</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
