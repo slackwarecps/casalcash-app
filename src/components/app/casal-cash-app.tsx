@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Expense, Loan, User, Installment } from '@/lib/types';
+import type { Expense, Loan, User, Installment, RecurringExpense } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import Dashboard from '@/components/app/dashboard';
 import ExpenseList from '@/components/app/expense-list';
 import LoanList from '@/components/app/loan-list';
 import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
+import ApplyRecurringExpensesDialog from '@/components/app/apply-recurring-expenses-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, isWithinInterval, addMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, addMonths, setDate } from 'date-fns';
 import {
   useFirestore,
   useUser,
@@ -19,8 +20,7 @@ import {
   deleteDocumentNonBlocking,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, Timestamp, getDoc, setDoc, writeBatch, getDocs, query } from 'firebase/firestore';
-import { initialExpenses, initialLoans } from '@/lib/data';
+import { collection, doc, Timestamp, writeBatch } from 'firebase/firestore';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -31,6 +31,7 @@ export default function CasalCashApp() {
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
+  const [isApplyRecurringDialogOpen, setIsApplyRecurringDialogOpen] = useState(false);
   
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -38,110 +39,30 @@ export default function CasalCashApp() {
 
   // Firestore collections
   const expensesCollection = useMemoFirebase(() => {
-    if (!user) return null; // Wait for user to be authenticated
+    if (!user) return null;
     return collection(firestore, 'couples', COUPLE_ID, 'expenses');
   }, [firestore, user]);
 
   const loansCollection = useMemoFirebase(() => {
-    if (!user) return null; // Wait for user to be authenticated
+    if (!user) return null;
     return collection(firestore, 'couples', COUPLE_ID, 'loans');
+  }, [firestore, user]);
+  
+  const recurringExpensesCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'couples', COUPLE_ID, 'recurringExpenses');
   }, [firestore, user]);
 
   const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
-
-  // Ensure user is part of the couple document and seed data
-  useEffect(() => {
-    if (!firestore || !user?.uid) return;
-
-    const setup = async () => {
-      const coupleDocRef = doc(firestore, 'couples', COUPLE_ID);
-      const expensesColRef = collection(coupleDocRef, 'expenses');
-      const loansColRef = collection(coupleDocRef, 'loans');
-
-      try {
-        // Ensure couple membership
-        const coupleDocSnap = await getDoc(coupleDocRef);
-        if (!coupleDocSnap.exists() || !coupleDocSnap.data().members?.[user.uid]) {
-            await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } }, { merge: true });
-        }
-
-        // Seed expenses if collection is empty
-        const expensesQuery = query(expensesColRef);
-        const expensesSnap = await getDocs(expensesQuery);
-        if (expensesSnap.empty && initialExpenses.length > 0) {
-            const batch = writeBatch(firestore);
-            initialExpenses.forEach(expense => {
-                const docRef = doc(expensesColRef);
-                const newExpense = {
-                    ...expense,
-                    id: docRef.id,
-                    date: Timestamp.fromDate(expense.date as Date),
-                    members: { [user.uid]: 'owner' }
-                };
-                batch.set(docRef, newExpense);
-            });
-            await batch.commit();
-            toast({ title: 'Dados de exemplo carregados!', description: `${initialExpenses.length} despesas foram adicionadas.` });
-        }
-
-        // Seed loans if collection is empty
-        const loansQuery = query(loansColRef);
-        const loansSnap = await getDocs(loansQuery);
-        if (loansSnap.empty && initialLoans.length > 0) {
-            const batch = writeBatch(firestore);
-            initialLoans.forEach(loanData => {
-              const newLoanId = doc(collection(firestore, 'temp')).id;
-              const installmentAmount = loanData.totalAmount / loanData.installments;
-              const installmentDetails: Installment[] = [];
-              const startDate = loanData.date as Date;
-              const november2025 = new Date('2025-11-01');
-
-              for(let i=0; i<loanData.installments; i++) {
-                const dueDate = addMonths(startDate, i);
-                installmentDetails.push({
-                  id: doc(collection(firestore, 'temp')).id,
-                  loanId: newLoanId,
-                  installmentNumber: i + 1,
-                  amount: installmentAmount,
-                  dueDate: Timestamp.fromDate(dueDate),
-                  isPaid: dueDate < november2025,
-                  paidDate: dueDate < november2025 ? Timestamp.fromDate(dueDate) : null,
-                });
-              }
-
-              const newLoan: Loan = {
-                ...loanData, 
-                id: newLoanId, 
-                paidInstallments: installmentDetails.filter(i => i.isPaid).length,
-                installmentDetails,
-                date: Timestamp.fromDate(startDate),
-                members: { [user.uid]: 'owner' }
-              };
-              const loanDocRef = doc(loansColRef, newLoanId);
-              batch.set(loanDocRef, newLoan);
-            });
-
-            await batch.commit();
-            toast({ title: 'Dados de exemplo carregados!', description: `${initialLoans.length} empréstimos foram adicionados.` });
-        }
-        
-      } catch (error) {
-        console.error("Error during initial setup:", error);
-        toast({ title: 'Erro na configuração inicial', description: 'Não foi possível garantir a associação ou carregar os dados.', variant: 'destructive' });
-      }
-    };
-
-    // setup();
-  }, [firestore, user, toast]);
-
+  const { data: recurringExpenses, isLoading: isLoadingRecurringExpenses } = useCollection<RecurringExpense>(recurringExpensesCollection);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     if (!expensesCollection || !user?.uid) return;
     const newExpense = { 
       ...expense, 
       date: Timestamp.fromDate(expense.date as Date),
-      members: { [user.uid]: 'owner' } // Add members for security rules
+      members: { [user.uid]: 'owner' }
     };
     addDocumentNonBlocking(expensesCollection, newExpense);
     toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
@@ -178,7 +99,7 @@ export default function CasalCashApp() {
        paidInstallments: 0,
        installmentDetails,
        date: Timestamp.fromDate(loan.date as Date),
-       members: { [user.uid]: 'owner' } // Add members for security rules
+       members: { [user.uid]: 'owner' }
     };
     
     const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', newLoanId);
@@ -212,6 +133,54 @@ export default function CasalCashApp() {
     const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', id);
     deleteDocumentNonBlocking(loanDocRef);
     toast({ title: "Empréstimo removido.", variant: "destructive" });
+  };
+
+  const handleApplyRecurring = async () => {
+    if (!firestore || !user?.uid || !recurringExpenses || recurringExpenses.length === 0) {
+      toast({
+        title: "Nenhuma despesa recorrente para aplicar",
+        description: "Cadastre despesas recorrentes primeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const batch = writeBatch(firestore);
+    let count = 0;
+
+    recurringExpenses.forEach(recExpense => {
+      const expenseDate = setDate(selectedMonth, recExpense.dayOfMonth);
+      
+      const newExpense: Omit<Expense, 'id'> = {
+        description: recExpense.description,
+        amount: recExpense.amount,
+        paidBy: recExpense.paidBy,
+        split: recExpense.split,
+        category: recExpense.category,
+        date: Timestamp.fromDate(expenseDate),
+        tipoDespesa: 'recorrente',
+        members: { [user.uid]: 'owner' }
+      };
+
+      const newExpenseRef = doc(expensesCollection);
+      batch.set(newExpenseRef, newExpense);
+      count++;
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: "Despesas recorrentes aplicadas!",
+        description: `${count} despesas foram lançadas para o mês selecionado.`,
+      });
+    } catch (error) {
+      console.error("Erro ao aplicar despesas recorrentes:", error);
+      toast({
+        title: "Erro ao aplicar despesas",
+        description: "Não foi possível lançar as despesas recorrentes.",
+        variant: "destructive",
+      });
+    }
   };
   
   const filteredExpenses = useMemo(() => {
@@ -250,6 +219,7 @@ export default function CasalCashApp() {
         onUserChange={setCurrentUser}
         onAddExpense={() => setIsExpenseDialogOpen(true)}
         onAddLoan={() => setIsLoanDialogOpen(true)}
+        onApplyRecurring={() => setIsApplyRecurringDialogOpen(true)}
         selectedMonth={selectedMonth}
         onMonthChange={setSelectedMonth}
       />
@@ -279,6 +249,12 @@ export default function CasalCashApp() {
         isOpen={isLoanDialogOpen}
         onOpenChange={setIsLoanDialogOpen}
         onAddLoan={addLoan}
+      />
+      <ApplyRecurringExpensesDialog
+        isOpen={isApplyRecurringDialogOpen}
+        onOpenChange={setIsApplyRecurringDialogOpen}
+        onConfirm={handleApplyRecurring}
+        selectedMonth={selectedMonth}
       />
     </div>
   );

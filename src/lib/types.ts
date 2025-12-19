@@ -21,6 +21,7 @@ export interface Expense extends FirestoreDoc {
   split: SplitType;
   category: Category;
   date: Date | Timestamp;
+  tipoDespesa?: 'recorrente' | 'pontual';
 }
 
 export interface Installment {
