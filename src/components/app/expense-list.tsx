@@ -106,8 +106,12 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{expense.description}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} - <Badge variant="outline">{expense.category}</Badge>
+                        <div className="text-sm text-muted-foreground flex gap-1 items-center">
+                          <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} -</span>
+                          <Badge variant="outline">{expense.category}</Badge>
+                          <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
+                            {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell>{formatCurrency(expense.amount)}</TableCell>
