@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileStack, HandCoins, Loader2, PiggyBank, Sparkles, User, Users } from 'lucide-react';
+import { FileStack, HandCoins, Loader2, PiggyBank, Sparkles, User, Users, CheckCheck, CircleAlert, CreditCard } from 'lucide-react';
 import type { Expense, Loan, User as UserType, Category } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { reconcileDebtsAction } from '@/app/actions';
@@ -40,6 +40,9 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
   const { toast } = useToast();
 
   const totalExpenses = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const totalPaid = expenses.filter(e => e.isPaid).reduce((acc, exp) => acc + exp.amount, 0);
+  const totalUnpaid = totalExpenses - totalPaid;
+
   const fabaoPaid = expenses
     .filter(e => e.paidBy === 'Fabão')
     .reduce((acc, exp) => acc + exp.amount, 0);
@@ -171,16 +174,35 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
         <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-2 gap-4 items-start">
-        <div className="grid grid-cols-1 md:grid-cols-3 col-span-1 md:col-span-3 lg:col-span-1 gap-4">
-            <Card className="bg-background/70 md:col-span-3">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total de Despesas</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
-            </CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-3 col-span-1 md:col-span-3 lg:col-span-1 gap-4">
+             <Card className="bg-background/70 col-span-2 md:col-span-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+                </CardContent>
             </Card>
+             <Card className="bg-green-500/10 border-green-500/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Despesas Pagas</CardTitle>
+                    <CheckCheck className="h-4 w-4 text-green-700 dark:text-green-400" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-green-800 dark:text-green-300">{formatCurrency(totalPaid)}</div>
+                </CardContent>
+            </Card>
+             <Card className="bg-red-500/10 border-red-500/20">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-red-800 dark:text-red-300">Falta Pagar</CardTitle>
+                    <CircleAlert className="h-4 w-4 text-red-700 dark:text-red-400" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-red-800 dark:text-red-300">{formatCurrency(totalUnpaid)}</div>
+                </CardContent>
+            </Card>
+
             <Card className="bg-background/70">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Fabão Pagou</CardTitle>
@@ -217,7 +239,7 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
                 <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
             </CardContent>
             </Card>
-            <Card className="bg-background/70">
+            <Card className="bg-background/70 col-span-2 md:col-span-3">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Crédito Mensal da Tati</CardTitle>
                 <PiggyBank className="h-4 w-4 text-muted-foreground" />
@@ -308,5 +330,4 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
     </Card>
   );
 }
-
     
