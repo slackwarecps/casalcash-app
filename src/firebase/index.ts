@@ -4,14 +4,14 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signOut } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
 
-// Using a single, direct configuration, but reading the API key from environment variables.
+// Using the configuration provided by the user.
 const firebaseConfig = {
-  "projectId": "casal-cash-dev",
-  "appId": "1:330045548348:web:b1d7d56c5e2d83b63b2f56",
-  "apiKey": process.env.NEXT_PUBLIC_FIREBASE_API_KEY, // Reading API key from .env
-  "authDomain": "casal-cash-dev.firebaseapp.com",
-  "measurementId": "G-8B0C3E4D5E",
-  "messagingSenderId": "330045548348"
+  apiKey: "AIzaSyDIzuRbi_B6266YBrIen1sbRK-F3S5NNwY",
+  authDomain: "studio-3727042918-3b869.firebaseapp.com",
+  projectId: "studio-3727042918-3b869",
+  storageBucket: "studio-3727042918-3b869.appspot.com",
+  messagingSenderId: "869021804454",
+  appId: "1:869021804454:web:6af43737eb2e858d479167"
 };
 
 
