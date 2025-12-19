@@ -108,7 +108,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "dd/MM/yyyy")
+                            format(field.value, "dd/MM/yyyy", { locale: ptBR })
                           ) : (
                             <span>Escolha uma data</span>
                           )}
