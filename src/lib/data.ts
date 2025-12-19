@@ -1,4 +1,67 @@
-import { Expense, Loan } from './types';
+import { addMonths } from 'date-fns';
+import { Expense, Loan, Installment } from './types';
+
+const generateInstallments = (loan: Omit<Loan, 'installmentDetails' | 'paidInstallments'>, paidUntil: Date): Pick<Loan, 'installmentDetails' | 'paidInstallments'> => {
+  const installmentDetails: Installment[] = [];
+  const installmentAmount = loan.totalAmount / loan.installments;
+  let paidCount = 0;
+
+  for (let i = 0; i < loan.installments; i++) {
+    const dueDate = addMonths(loan.date, i);
+    const isPaid = dueDate <= paidUntil;
+    if (isPaid) {
+      paidCount++;
+    }
+    installmentDetails.push({
+      id: `${loan.id}-inst-${i + 1}`,
+      loanId: loan.id,
+      installmentNumber: i + 1,
+      amount: installmentAmount,
+      dueDate,
+      isPaid,
+      paidDate: isPaid ? dueDate : null,
+    });
+  }
+
+  return { installmentDetails, paidInstallments: paidCount };
+};
+
+const paidUntilDate = new Date('2025-11-30T10:00:00Z');
+
+const loan1Base = {
+  id: 'l1',
+  description: 'Máquina de Lavar',
+  totalAmount: 2773.92, // 24 * 115.58
+  lender: 'Fabão' as const,
+  borrower: 'Tati' as const,
+  installments: 24,
+  date: new Date('2023-12-04T10:00:00Z'),
+};
+const loan1Details = generateInstallments(loan1Base, paidUntilDate);
+
+const loan2Base = {
+  id: 'l2',
+  description: 'Cama Queen',
+  totalAmount: 3047.60, // 20 * 152.38
+  lender: 'Fabão' as const,
+  borrower: 'Tati' as const,
+  installments: 20,
+  date: new Date('2025-07-04T10:00:00Z'),
+};
+const loan2Details = generateInstallments(loan2Base, paidUntilDate);
+
+
+const loan3Base = {
+  id: 'l3',
+  description: 'Miami Tenis',
+  totalAmount: 2090.00, // 10 * 209.00
+  lender: 'Fabão' as const,
+  borrower: 'Tati' as const,
+  installments: 10,
+  date: new Date('2025-10-04T10:00:00Z'),
+};
+const loan3Details = generateInstallments(loan3Base, paidUntilDate);
+
 
 export const initialExpenses: Expense[] = [
   {
@@ -40,34 +103,7 @@ export const initialExpenses: Expense[] = [
 ];
 
 export const initialLoans: Loan[] = [
-    {
-        id: 'l1',
-        description: 'Máquina de Lavar',
-        totalAmount: 2773.92, // 24 * 115.58
-        lender: 'Fabão',
-        borrower: 'Tati',
-        installments: 24,
-        paidInstallments: 24, // Starts Dec 2023, ends Nov 2025. All paid.
-        date: new Date('2023-12-04T10:00:00Z'),
-    },
-    {
-        id: 'l2',
-        description: 'Cama Queen',
-        totalAmount: 3047.60, // 20 * 152.38
-        lender: 'Fabão',
-        borrower: 'Tati',
-        installments: 20,
-        paidInstallments: 5, // Starts Jul 2025, paid until Nov 2025 (Jul, Aug, Sep, Oct, Nov).
-        date: new Date('2025-07-04T10:00:00Z'),
-    },
-    {
-        id: 'l3',
-        description: 'Miami Tenis',
-        totalAmount: 2090.00, // 10 * 209.00
-        lender: 'Fabão',
-        borrower: 'Tati',
-        installments: 10,
-        paidInstallments: 2, // Starts Oct 2025, paid until Nov 2025 (Oct, Nov).
-        date: new Date('2025-10-04T10:00:00Z'),
-    }
+  { ...loan1Base, ...loan1Details },
+  { ...loan2Base, ...loan2Details },
+  { ...loan3Base, ...loan3Details },
 ];

@@ -10,7 +10,7 @@ import { reconcileDebtsAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { DebtReconciliationOutput } from '@/ai/flows/debt-reconciliation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { addMonths, format, isWithinInterval, startOfMonth } from 'date-fns';
+import { addMonths, format, isSameMonth, isWithinInterval, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface DashboardProps {
@@ -80,22 +80,16 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
       }
     }).filter(Boolean);
 
-    const loanDebts = loans.flatMap(loan => {
-      const loanDebtsList = [];
-      const installmentValue = loan.totalAmount / loan.installments;
-      
-      const nextPaymentMonth = addMonths(loan.date, loan.paidInstallments);
-       if (nextPaymentMonth.getMonth() === selectedMonth.getMonth() && nextPaymentMonth.getFullYear() === selectedMonth.getFullYear()) {
-         loanDebtsList.push({
-           from: loan.borrower,
-           to: loan.lender,
-           amount: installmentValue,
-           description: `Parcela do empréstimo (${loan.paidInstallments + 1}/${loan.installments}): ${loan.description}`
-         });
-       }
-
-      return loanDebtsList;
-    });
+    const loanDebts = loans.flatMap(loan => 
+      loan.installmentDetails
+        .filter(inst => isSameMonth(inst.dueDate, selectedMonth) && !inst.isPaid)
+        .map(inst => ({
+            from: loan.borrower,
+            to: loan.lender,
+            amount: inst.amount,
+            description: `Parcela do empréstimo (${inst.installmentNumber}/${loan.installments}): ${loan.description}`
+        }))
+    );
     
     // @ts-ignore
     const allDebts = [...debts, ...loanDebts];

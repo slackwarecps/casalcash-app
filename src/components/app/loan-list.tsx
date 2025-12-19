@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ export default function LoanList({ loans, onPayInstallment, onDelete }: LoanList
     <Card>
       <CardHeader>
         <CardTitle>Empréstimos e Parcelas</CardTitle>
-        <CardDescription>Controle de empréstimos e compras parceladas.</CardDescription>
+        <CardDescription>Controle de empréstimos e compras parceladas. Clique em um item para ver detalhes.</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-96">
@@ -57,29 +58,33 @@ export default function LoanList({ loans, onPayInstallment, onDelete }: LoanList
                 const isPaidOff = loan.paidInstallments >= loan.installments;
 
                 return (
-                  <TableRow key={loan.id}>
+                  <TableRow key={loan.id} className="cursor-pointer">
                     <TableCell>
-                      <div className="font-medium">{loan.description}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {loan.borrower} deve a {loan.lender}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatCurrency(installmentValue)} / mês
-                      </div>
+                      <Link href={`/loans/${loan.id}`} className="block">
+                        <div className="font-medium">{loan.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {loan.borrower} deve a {loan.lender}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatCurrency(installmentValue)} / mês
+                        </div>
+                      </Link>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-2">
-                        <Progress value={progress} className="w-full" />
-                        <span className="text-xs text-muted-foreground">
-                          {loan.paidInstallments} de {loan.installments} parcelas pagas
-                        </span>
-                      </div>
+                       <Link href={`/loans/${loan.id}`} className="block">
+                        <div className="flex flex-col gap-2">
+                          <Progress value={progress} className="w-full" />
+                          <span className="text-xs text-muted-foreground">
+                            {loan.paidInstallments} de {loan.installments} parcelas pagas
+                          </span>
+                        </div>
+                      </Link>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => onPayInstallment(loan.id)}
+                        onClick={(e) => { e.stopPropagation(); onPayInstallment(loan.id); }}
                         disabled={isPaidOff}
                       >
                         <HandCoins className="h-4 w-4 mr-1" />
@@ -87,7 +92,7 @@ export default function LoanList({ loans, onPayInstallment, onDelete }: LoanList
                       </Button>
                       <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                             <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -100,8 +105,8 @@ export default function LoanList({ loans, onPayInstallment, onDelete }: LoanList
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDelete(loan.id)}>Deletar</AlertDialogAction>
+                          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={(e) => { e.stopPropagation(); onDelete(loan.id); }}>Deletar</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>

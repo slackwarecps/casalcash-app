@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 interface AddLoanDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAddLoan: (loan: Omit<Loan, 'id' | 'paidInstallments'>) => void;
+  onAddLoan: (loan: Omit<Loan, 'id' | 'paidInstallments' | 'installmentDetails'>) => void;
 }
 
 const formSchema = z.object({

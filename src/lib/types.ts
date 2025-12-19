@@ -16,6 +16,16 @@ export interface Expense {
   date: Date;
 }
 
+export interface Installment {
+  id: string;
+  loanId: string;
+  installmentNumber: number;
+  amount: number;
+  dueDate: Date;
+  paidDate?: Date | null;
+  isPaid: boolean;
+}
+
 export interface Loan {
   id: string;
   description: string;
@@ -23,6 +33,7 @@ export interface Loan {
   lender: User;
   borrower: User;
   installments: number;
-  paidInstallments: number;
+  paidInstallments: number; // This will be calculated from installments array
   date: Date;
+  installmentDetails: Installment[];
 }

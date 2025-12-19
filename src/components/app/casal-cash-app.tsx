@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { initialExpenses, initialLoans } from '@/lib/data';
-import type { Expense, Loan, User } from '@/lib/types';
+import type { Expense, Loan, User, Installment } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import Dashboard from '@/components/app/dashboard';
 import ExpenseList from '@/components/app/expense-list';
@@ -10,7 +10,7 @@ import LoanList from '@/components/app/loan-list';
 import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, addMonths } from 'date-fns';
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
@@ -34,17 +34,45 @@ export default function CasalCashApp() {
     toast({ title: "Despesa removida.", variant: "destructive" });
   };
 
-  const addLoan = (loan: Omit<Loan, 'id' | 'paidInstallments'>) => {
-    const newLoan = { ...loan, id: Date.now().toString(), paidInstallments: 0 };
+  const addLoan = (loan: Omit<Loan, 'id' | 'paidInstallments' | 'installmentDetails'>) => {
+    const newLoanId = Date.now().toString();
+    const installmentAmount = loan.totalAmount / loan.installments;
+    const installmentDetails: Installment[] = [];
+    for(let i=0; i<loan.installments; i++) {
+      installmentDetails.push({
+        id: `${newLoanId}-inst-${i+1}`,
+        loanId: newLoanId,
+        installmentNumber: i + 1,
+        amount: installmentAmount,
+        dueDate: addMonths(loan.date, i),
+        isPaid: false,
+        paidDate: null,
+      });
+    }
+
+    const newLoan: Loan = {
+       ...loan, 
+       id: newLoanId, 
+       paidInstallments: 0,
+       installmentDetails
+    };
+
     setLoans(prev => [newLoan, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
     toast({ title: "Empréstimo adicionado!", description: `"${newLoan.description}" foi registrado.` });
   };
 
-  const payInstallment = (id: string) => {
-    setLoans(prev => prev.map(loan => {
-      if (loan.id === id && loan.paidInstallments < loan.installments) {
-        toast({ title: "Parcela paga!", description: `Uma parcela de "${loan.description}" foi paga.` });
-        return { ...loan, paidInstallments: loan.paidInstallments + 1 };
+  const payInstallment = (loanId: string) => {
+    setLoans(prevLoans => prevLoans.map(loan => {
+      if (loan.id === loanId) {
+        let firstUnpaidInstallment = loan.installmentDetails.find(inst => !inst.isPaid);
+        if (firstUnpaidInstallment) {
+           const updatedInstallments = loan.installmentDetails.map(inst =>
+            inst.id === firstUnpaidInstallment!.id ? { ...inst, isPaid: true, paidDate: new Date() } : inst
+          );
+          const paidCount = updatedInstallments.filter(i => i.isPaid).length;
+          toast({ title: "Parcela paga!", description: `Uma parcela de "${loan.description}" foi paga.` });
+          return { ...loan, installmentDetails: updatedInstallments, paidInstallments: paidCount };
+        }
       }
       return loan;
     }));
