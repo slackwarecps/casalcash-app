@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Expense, Loan, User, Installment } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import Dashboard from '@/components/app/dashboard';
@@ -12,11 +12,14 @@ import { useToast } from '@/hooks/use-toast';
 import { startOfMonth, endOfMonth, isWithinInterval, addMonths, serverTimestamp } from 'date-fns';
 import {
   useFirestore,
+  useAuth,
+  useUser,
   useCollection,
   useMemoFirebase,
   addDocumentNonBlocking,
   deleteDocumentNonBlocking,
-  setDocumentNonBlocking
+  setDocumentNonBlocking,
+  initiateAnonymousSignIn,
 } from '@/firebase';
 import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
 
@@ -32,15 +35,32 @@ export default function CasalCashApp() {
   
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  // Automatically sign in anonymously if no user is logged in
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   // Firestore collections
-  const expensesCollection = useMemoFirebase(() => collection(firestore, 'couples', COUPLE_ID, 'expenses'), [firestore]);
-  const loansCollection = useMemoFirebase(() => collection(firestore, 'couples', COUPLE_ID, 'loans'), [firestore]);
+  const expensesCollection = useMemoFirebase(() => {
+    if (!user) return null; // Wait for user to be authenticated
+    return collection(firestore, 'couples', COUPLE_ID, 'expenses');
+  }, [firestore, user]);
+
+  const loansCollection = useMemoFirebase(() => {
+    if (!user) return null; // Wait for user to be authenticated
+    return collection(firestore, 'couples', COUPLE_ID, 'loans');
+  }, [firestore, user]);
 
   const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
+    if (!expensesCollection) return;
     const newExpense = { 
       ...expense, 
       date: Timestamp.fromDate(expense.date), // Convert Date to Firestore Timestamp
@@ -162,8 +182,8 @@ export default function CasalCashApp() {
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses} />
-          <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans} />
+          <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses || isUserLoading} />
+          <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans || isUserLoading} />
         </div>
       </div>
 
@@ -180,3 +200,5 @@ export default function CasalCashApp() {
     </div>
   );
 }
+
+    
