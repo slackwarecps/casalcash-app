@@ -9,7 +9,7 @@ import LoanList from '@/components/app/loan-list';
 import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, isWithinInterval, addMonths, serverTimestamp } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, addMonths } from 'date-fns';
 import {
   useFirestore,
   useAuth,
@@ -21,7 +21,7 @@ import {
   setDocumentNonBlocking,
   initiateAnonymousSignIn,
 } from '@/firebase';
-import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, doc, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -40,10 +40,36 @@ export default function CasalCashApp() {
 
   // Automatically sign in anonymously if no user is logged in
   useEffect(() => {
-    if (!isUserLoading && !user) {
+    if (!isUserLoading && !user && auth) {
       initiateAnonymousSignIn(auth);
     }
   }, [isUserLoading, user, auth]);
+
+  // Ensure the couple document exists for security rules
+  useEffect(() => {
+    if (!user || !firestore) return;
+
+    const coupleDocRef = doc(firestore, 'couples', COUPLE_ID);
+    
+    const ensureCoupleDoc = async () => {
+      const docSnap = await getDoc(coupleDocRef);
+      if (!docSnap.exists()) {
+        try {
+          // Create the document with the current user as a member
+          await setDoc(coupleDocRef, {
+            members: {
+              [user.uid]: 'owner'
+            }
+          });
+        } catch (e) {
+          console.error("Error creating couple document:", e);
+        }
+      }
+    };
+
+    ensureCoupleDoc();
+
+  }, [user, firestore]);
 
   // Firestore collections
   const expensesCollection = useMemoFirebase(() => {
@@ -60,10 +86,11 @@ export default function CasalCashApp() {
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
-    if (!expensesCollection) return;
+    if (!expensesCollection || !user) return;
     const newExpense = { 
       ...expense, 
-      date: Timestamp.fromDate(expense.date), // Convert Date to Firestore Timestamp
+      date: Timestamp.fromDate(expense.date as Date),
+      members: { [user.uid]: 'owner' } // Add members for security rules
     };
     addDocumentNonBlocking(expensesCollection, newExpense);
     toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
@@ -76,6 +103,7 @@ export default function CasalCashApp() {
   };
 
   const addLoan = (loan: Omit<Loan, 'id' | 'paidInstallments' | 'installmentDetails'>) => {
+    if (!loansCollection || !user) return;
     const newLoanId = doc(collection(firestore, 'temp')).id;
     const installmentAmount = loan.totalAmount / loan.installments;
     const installmentDetails: Installment[] = [];
@@ -86,7 +114,7 @@ export default function CasalCashApp() {
         loanId: newLoanId,
         installmentNumber: i + 1,
         amount: installmentAmount,
-        dueDate: Timestamp.fromDate(addMonths(loan.date, i)),
+        dueDate: Timestamp.fromDate(addMonths(loan.date as Date, i)),
         isPaid: false,
         paidDate: null,
       });
@@ -97,7 +125,8 @@ export default function CasalCashApp() {
        id: newLoanId, 
        paidInstallments: 0,
        installmentDetails,
-       date: Timestamp.fromDate(loan.date)
+       date: Timestamp.fromDate(loan.date as Date),
+       members: { [user.uid]: 'owner' } // Add members for security rules
     };
     
     const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', newLoanId);
@@ -200,5 +229,3 @@ export default function CasalCashApp() {
     </div>
   );
 }
-
-    

@@ -8,7 +8,11 @@ export const categories: Category[] = ["Moradia", "Transporte", "Alimentação",
 
 export type SplitType = "50/50" | "100% Fabão" | "100% Tati";
 
-export interface Expense {
+interface FirestoreDoc {
+    members?: { [key: string]: 'owner' | 'editor' | 'viewer' };
+}
+
+export interface Expense extends FirestoreDoc {
   id: string;
   description: string;
   amount: number;
@@ -28,7 +32,7 @@ export interface Installment {
   isPaid: boolean;
 }
 
-export interface Loan {
+export interface Loan extends FirestoreDoc {
   id: string;
   description: string;
   totalAmount: number;
