@@ -47,7 +47,7 @@ export const initialLoans: Loan[] = [
         lender: 'Fabão',
         borrower: 'Tati',
         installments: 24,
-        paidInstallments: 8, // Assuming payments from Dec/2023 to Jul/2024
+        paidInstallments: 24, // Started Dec 2023, ends Nov 2025. All paid.
         date: new Date('2023-12-04T10:00:00Z'),
     },
     {
@@ -57,7 +57,7 @@ export const initialLoans: Loan[] = [
         lender: 'Fabão',
         borrower: 'Tati',
         installments: 20,
-        paidInstallments: 0,
+        paidInstallments: 5, // Started Jul 2025, paid until Nov 2025 (Jul, Aug, Sep, Oct, Nov).
         date: new Date('2025-07-04T10:00:00Z'),
     }
 ];
