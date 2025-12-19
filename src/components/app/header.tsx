@@ -1,11 +1,14 @@
 'use client';
 
-import { Landmark, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { User } from '@/lib/types';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getAuth, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useFirebaseApp } from '@/firebase';
 
 interface AppHeaderProps {
   currentUser: User;
@@ -33,6 +36,14 @@ export default function AppHeader({
   };
   
   const monthName = format(selectedMonth, 'MMMM/yyyy', { locale: ptBR });
+  const router = useRouter();
+  const app = useFirebaseApp();
+
+  const handleSignOut = async () => {
+    const auth = getAuth(app);
+    await signOut(auth);
+    router.push('/login');
+  };
 
   return (
     <header className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -48,6 +59,9 @@ export default function AppHeader({
             <span className="w-40 text-center font-semibold capitalize">{monthName}</span>
             <Button variant="outline" size="icon" onClick={handleNextMonth}>
               <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sair">
+                <LogOut className="h-4 w-4" />
             </Button>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">

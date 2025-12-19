@@ -19,7 +19,6 @@ import {
   addDocumentNonBlocking,
   deleteDocumentNonBlocking,
   setDocumentNonBlocking,
-  initiateAnonymousSignIn,
 } from '@/firebase';
 import { collection, query, where, doc, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 
@@ -35,15 +34,7 @@ export default function CasalCashApp() {
   
   const { toast } = useToast();
   const firestore = useFirestore();
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
-
-  // Automatically sign in anonymously if no user is logged in
-  useEffect(() => {
-    if (!isUserLoading && !user && auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
 
   // Ensure the couple document exists for security rules
   useEffect(() => {
@@ -56,13 +47,24 @@ export default function CasalCashApp() {
       if (!docSnap.exists()) {
         try {
           // Create the document with the current user as a member
-          await setDoc(coupleDocRef, {
-            members: {
-              [user.uid]: 'owner'
-            }
-          });
+          // In a real app, you'd add both users. For now, just one is enough.
+          const userIds = ['teste@casal.cash']; // Hardcoding for simplicity, would be dynamic
+          const members: { [key: string]: string } = {};
+
+          if(user.uid) {
+            members[user.uid] = 'owner';
+          }
+          
+          await setDoc(coupleDocRef, { members });
         } catch (e) {
           console.error("Error creating couple document:", e);
+        }
+      } else {
+        // If doc exists, ensure current user is a member
+        const coupleData = docSnap.data();
+        if (user.uid && !coupleData.members[user.uid]) {
+            const updatedMembers = { ...coupleData.members, [user.uid]: 'owner' };
+            await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
         }
       }
     };
@@ -86,7 +88,7 @@ export default function CasalCashApp() {
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
-    if (!expensesCollection || !user) return;
+    if (!expensesCollection || !user?.uid) return;
     const newExpense = { 
       ...expense, 
       date: Timestamp.fromDate(expense.date as Date),
@@ -97,13 +99,14 @@ export default function CasalCashApp() {
   };
 
   const deleteExpense = (id: string) => {
+    if(!firestore) return;
     const expenseDocRef = doc(firestore, 'couples', COUPLE_ID, 'expenses', id);
     deleteDocumentNonBlocking(expenseDocRef);
     toast({ title: "Despesa removida.", variant: "destructive" });
   };
 
   const addLoan = (loan: Omit<Loan, 'id' | 'paidInstallments' | 'installmentDetails'>) => {
-    if (!loansCollection || !user) return;
+    if (!loansCollection || !firestore || !user?.uid) return;
     const newLoanId = doc(collection(firestore, 'temp')).id;
     const installmentAmount = loan.totalAmount / loan.installments;
     const installmentDetails: Installment[] = [];
@@ -136,6 +139,7 @@ export default function CasalCashApp() {
   };
 
   const payInstallment = (loanId: string) => {
+    if (!firestore || !loans) return;
     const loan = loans?.find(l => l.id === loanId);
     if (loan) {
       const firstUnpaidInstallment = loan.installmentDetails.find(inst => !inst.isPaid);
@@ -155,6 +159,7 @@ export default function CasalCashApp() {
   };
 
   const deleteLoan = (id: string) => {
+    if(!firestore) return;
     const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', id);
     deleteDocumentNonBlocking(loanDocRef);
     toast({ title: "Empréstimo removido.", variant: "destructive" });
