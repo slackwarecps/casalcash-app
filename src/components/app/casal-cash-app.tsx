@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { initialExpenses, initialLoans } from '@/lib/data';
 import type { Expense, Loan, User } from '@/lib/types';
 import AppHeader from '@/components/app/header';
@@ -10,11 +10,13 @@ import LoanList from '@/components/app/loan-list';
 import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [loans, setLoans] = useState<Loan[]>(initialLoans);
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
@@ -53,6 +55,14 @@ export default function CasalCashApp() {
     toast({ title: "Empréstimo removido.", variant: "destructive" });
   };
 
+  const filteredExpenses = useMemo(() => {
+    const start = startOfMonth(selectedMonth);
+    const end = endOfMonth(selectedMonth);
+    return expenses.filter(exp => isWithinInterval(exp.date, { start, end }));
+  }, [expenses, selectedMonth]);
+
+  // Loans are not filtered by month to show their progress over time.
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <AppHeader
@@ -60,13 +70,15 @@ export default function CasalCashApp() {
         onUserChange={setCurrentUser}
         onAddExpense={() => setIsExpenseDialogOpen(true)}
         onAddLoan={() => setIsLoanDialogOpen(true)}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
       />
       
       <div className="grid grid-cols-1 gap-8 mt-8">
-        <Dashboard expenses={expenses} loans={loans} currentUser={currentUser} />
+        <Dashboard expenses={filteredExpenses} loans={loans} currentUser={currentUser} selectedMonth={selectedMonth} />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ExpenseList expenses={expenses} onDelete={deleteExpense} />
+          <ExpenseList expenses={filteredExpenses} onDelete={deleteExpense} />
           <LoanList loans={loans} onPayInstallment={payInstallment} onDelete={deleteLoan} />
         </div>
       </div>

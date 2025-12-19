@@ -10,14 +10,17 @@ import { reconcileDebtsAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { DebtReconciliationOutput } from '@/ai/flows/debt-reconciliation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { addMonths, format, isWithinInterval, startOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface DashboardProps {
   expenses: Expense[];
   loans: Loan[];
   currentUser: UserType;
+  selectedMonth: Date;
 }
 
-export default function Dashboard({ expenses, loans, currentUser }: DashboardProps) {
+export default function Dashboard({ expenses, loans, currentUser, selectedMonth }: DashboardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [aiResult, setAiResult] = useState<DebtReconciliationOutput | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -31,6 +34,8 @@ export default function Dashboard({ expenses, loans, currentUser }: DashboardPro
   const tatiPaid = expenses
     .filter(e => e.paidBy === 'Tati')
     .reduce((acc, exp) => acc + exp.amount, 0);
+    
+  const monthName = format(selectedMonth, 'MMMM', { locale: ptBR });
 
   const handleReconciliation = async () => {
     setIsLoading(true);
@@ -66,17 +71,30 @@ export default function Dashboard({ expenses, loans, currentUser }: DashboardPro
       }
     }).filter(Boolean);
 
-    const loanDebts = loans.map(loan => {
-      if (loan.paidInstallments < loan.installments) {
-        return {
-          from: loan.borrower,
-          to: loan.lender,
-          amount: loan.totalAmount / loan.installments,
-          description: `Parcela do empréstimo: ${loan.description}`
+    const loanDebts = loans.flatMap(loan => {
+      const loanDebtsList = [];
+      const installmentValue = loan.totalAmount / loan.installments;
+      const startOfSelectedMonth = startOfMonth(selectedMonth);
+
+      for (let i = 0; i < loan.paidInstallments; i++) {
+        const paymentMonth = addMonths(loan.date, i);
+        if (isWithinInterval(paymentMonth, { start: startOfSelectedMonth, end: new Date() })) {
+           // This logic is complex, let's simplify and just consider the next payment due this month
         }
       }
-      return null;
-    }).filter(Boolean);
+      
+      const nextPaymentMonth = addMonths(loan.date, loan.paidInstallments);
+       if (nextPaymentMonth.getMonth() === selectedMonth.getMonth() && nextPaymentMonth.getFullYear() === selectedMonth.getFullYear()) {
+         loanDebtsList.push({
+           from: loan.borrower,
+           to: loan.lender,
+           amount: installmentValue,
+           description: `Parcela do empréstimo (${loan.paidInstallments + 1}/${loan.installments}): ${loan.description}`
+         });
+       }
+
+      return loanDebtsList;
+    });
     
     // @ts-ignore
     const allDebts = [...debts, ...loanDebts];
@@ -108,8 +126,8 @@ export default function Dashboard({ expenses, loans, currentUser }: DashboardPro
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Resumo do Mês</CardTitle>
-        <CardDescription>Visão geral das finanças do casal.</CardDescription>
+        <CardTitle className="text-2xl capitalize">Resumo de {monthName}</CardTitle>
+        <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-background/70">

@@ -18,7 +18,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -30,7 +32,7 @@ export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
     <Card>
       <CardHeader>
         <CardTitle>Lista de Despesas</CardTitle>
-        <CardDescription>Todas as despesas registradas no mês.</CardDescription>
+        <CardDescription>Todas as despesas registradas no mês selecionado.</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-96">
@@ -40,15 +42,14 @@ export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
                 <TableHead>Descrição</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Pago por</TableHead>
-                <TableHead>Divisão</TableHead>
                 <TableHead className="text-right">Ação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {expenses.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    Nenhuma despesa registrada ainda.
+                  <TableCell colSpan={4} className="text-center">
+                    Nenhuma despesa registrada para este mês.
                   </TableCell>
                 </TableRow>
               )}
@@ -56,16 +57,15 @@ export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
                 <TableRow key={expense.id}>
                   <TableCell>
                     <div className="font-medium">{expense.description}</div>
-                    <div className="text-sm text-muted-foreground">{expense.category}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {format(expense.date, "dd/MM/yyyy", { locale: ptBR })} - <Badge variant="outline">{expense.category}</Badge>
+                    </div>
                   </TableCell>
                   <TableCell>{formatCurrency(expense.amount)}</TableCell>
                   <TableCell>
                      <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
                         {expense.paidBy}
                      </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{expense.split}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <AlertDialog>
