@@ -20,7 +20,7 @@ import { ptBR } from 'date-fns/locale';
 interface AddExpenseDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAddExpense: (expense: Omit<Expense, 'id'>) => void;
+  onAddExpense: (expense: Omit<Expense, 'id' | 'tipoDespesa'>) => void;
 }
 
 const formSchema = z.object({

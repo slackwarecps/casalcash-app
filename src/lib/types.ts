@@ -21,7 +21,7 @@ export interface Expense extends FirestoreDoc {
   split: SplitType;
   category: Category;
   date: Date | Timestamp;
-  tipoDespesa?: 'recorrente' | 'pontual';
+  tipoDespesa: 'recorrente' | 'pontual';
   isPaid?: boolean;
   paymentDetails?: string;
 }

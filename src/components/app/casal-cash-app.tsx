@@ -61,10 +61,11 @@ export default function CasalCashApp() {
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
   const { data: recurringExpenses, isLoading: isLoadingRecurringExpenses } = useCollection<RecurringExpense>(recurringExpensesCollection);
 
-  const addExpense = (expense: Omit<Expense, 'id'>) => {
+  const addExpense = (expense: Omit<Expense, 'id' | 'tipoDespesa'>) => {
     if (!expensesCollection || !user?.uid) return;
     const newExpense = {
       ...expense,
+      tipoDespesa: 'pontual' as const,
       date: Timestamp.fromDate(expense.date as Date),
       members: { [user.uid]: 'owner' }
     };
@@ -140,7 +141,7 @@ export default function CasalCashApp() {
   };
 
   const handleApplyRecurring = async () => {
-    if (!firestore || !user?.uid || !recurringExpenses || recurringExpenses.length === 0) {
+    if (!firestore || !user?.uid || !recurringExpenses || recurringExpenses.length === 0 || !expensesCollection) {
       toast({
         title: "Nenhuma despesa recorrente para aplicar",
         description: "Cadastre despesas recorrentes primeiro.",
@@ -148,13 +149,13 @@ export default function CasalCashApp() {
       });
       return;
     }
-
+  
     const batch = writeBatch(firestore);
     let count = 0;
-
+  
     recurringExpenses.forEach(recExpense => {
       const expenseDate = setDate(selectedMonth, recExpense.dayOfMonth);
-
+  
       const newExpense: Omit<Expense, 'id'> = {
         description: recExpense.description,
         amount: recExpense.amount,
@@ -163,14 +164,14 @@ export default function CasalCashApp() {
         category: recExpense.category,
         date: Timestamp.fromDate(expenseDate),
         tipoDespesa: 'recorrente',
-        members: { [user.uid]: 'owner' }
+        members: { [user.uid as string]: 'owner' }
       };
-
+  
       const newExpenseRef = doc(expensesCollection);
       batch.set(newExpenseRef, newExpense);
       count++;
     });
-
+  
     try {
       await batch.commit();
       toast({
