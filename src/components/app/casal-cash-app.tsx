@@ -16,7 +16,8 @@ export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [loans, setLoans] = useState<Loan[]>(initialLoans);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date('2025-10-01T12:00:00Z'));
+  const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
@@ -103,7 +104,14 @@ export default function CasalCashApp() {
       />
       
       <div className="grid grid-cols-1 gap-8 mt-8">
-        <Dashboard expenses={filteredExpenses} loans={loans} currentUser={currentUser} selectedMonth={selectedMonth} />
+        <Dashboard 
+          expenses={filteredExpenses} 
+          loans={loans} 
+          currentUser={currentUser} 
+          selectedMonth={selectedMonth}
+          preCreditBalance={preCreditBalance}
+          onPreCreditBalanceChange={setPreCreditBalance}
+        />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <ExpenseList expenses={filteredExpenses} onDelete={deleteExpense} />

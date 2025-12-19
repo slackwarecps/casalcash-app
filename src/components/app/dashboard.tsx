@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileStack, HandCoins, Loader2, Sparkles, User, Users } from 'lucide-react';
+import { FileStack, HandCoins, Loader2, PiggyBank, Sparkles, User, Users } from 'lucide-react';
 import type { Expense, Loan, User as UserType } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { reconcileDebtsAction } from '@/app/actions';
@@ -12,15 +12,19 @@ import { DebtReconciliationOutput } from '@/ai/flows/debt-reconciliation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { addMonths, format, isSameMonth, isWithinInterval, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface DashboardProps {
   expenses: Expense[];
   loans: Loan[];
   currentUser: UserType;
   selectedMonth: Date;
+  preCreditBalance: number;
+  onPreCreditBalanceChange: (value: number) => void;
 }
 
-export default function Dashboard({ expenses, loans, currentUser, selectedMonth }: DashboardProps) {
+export default function Dashboard({ expenses, loans, currentUser, selectedMonth, preCreditBalance, onPreCreditBalanceChange }: DashboardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [aiResult, setAiResult] = useState<DebtReconciliationOutput | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -91,8 +95,15 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
         }))
     );
     
+    const preCreditDebt = {
+        from: 'Tati' as UserType,
+        to: 'Fabão' as UserType,
+        amount: preCreditBalance,
+        description: 'Crédito mensal da Tati'
+    };
+    
     // @ts-ignore
-    const allDebts = [...debts, ...loanDebts];
+    const allDebts = [...debts, ...loanDebts, preCreditDebt];
 
     const result = await reconcileDebtsAction({
       debts: allDebts,
@@ -124,8 +135,8 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
         <CardTitle className="text-2xl capitalize">Resumo de {monthName}</CardTitle>
         <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-background/70 md:col-span-2 lg:col-span-1">
+      <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="bg-background/70">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Despesas</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -170,9 +181,23 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
             <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
           </CardContent>
         </Card>
+         <Card className="bg-background/70">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Crédito Mensal da Tati</CardTitle>
+            <PiggyBank className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+             <Input 
+                type="number"
+                value={preCreditBalance}
+                onChange={(e) => onPreCreditBalanceChange(parseFloat(e.target.value) || 0)}
+                className="text-2xl font-bold p-0 border-0 focus-visible:ring-0"
+            />
+          </CardContent>
+        </Card>
         
         {(aiResult || aiError) && (
-            <div className="md:col-span-2 lg:col-span-5 mt-4 animate-in fade-in-50 duration-500">
+            <div className="md:col-span-3 lg:col-span-6 mt-4 animate-in fade-in-50 duration-500">
                 {aiResult && (
                     <Alert className="border-accent bg-accent/10">
                         <Sparkles className="h-4 w-4 !text-accent" />
@@ -194,7 +219,7 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
       </CardContent>
       <CardFooter className="flex-col items-start gap-4">
         <p className="text-sm text-muted-foreground">
-          Clique para usar a IA e descobrir o balanço final do mês, incluindo despesas e parcelas de empréstimos.
+          Clique para usar a IA e descobrir o balanço final do mês, incluindo despesas, crédito e parcelas de empréstimos.
         </p>
         <Button onClick={handleReconciliation} disabled={isLoading}>
           {isLoading ? (
