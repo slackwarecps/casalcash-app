@@ -1,3 +1,4 @@
+'use client';
 import { Timestamp } from "firebase/firestore";
 
 export type User = "Fabão" | "Tati";
@@ -42,4 +43,14 @@ export interface Loan extends FirestoreDoc {
   paidInstallments: number;
   date: Date | Timestamp;
   installmentDetails: Installment[];
+}
+
+export interface RecurringExpense extends FirestoreDoc {
+  id: string;
+  dayOfMonth: number;
+  description: string;
+  category: Category;
+  amount: number;
+  split: SplitType;
+  paidBy: User;
 }

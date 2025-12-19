@@ -72,6 +72,51 @@
         "categoryId"
       ]
     },
+    "RecurringExpense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RecurringExpense",
+      "type": "object",
+      "description": "Represents a recurring expense that happens monthly.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the RecurringExpense entity."
+        },
+        "dayOfMonth": {
+            "type": "number",
+            "description": "The day of the month the expense occurs (1-30)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the expense."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the expense."
+        },
+        "paidBy": {
+          "type": "string",
+          "description": "The user who pays this expense."
+        },
+        "split": {
+          "type": "string",
+          "description": "The split type of the expense, e.g., '50/50' or '100% User'."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of expense."
+        }
+      },
+      "required": [
+        "id",
+        "dayOfMonth",
+        "description",
+        "amount",
+        "paidBy",
+        "split",
+        "category"
+      ]
+    },
     "Loan": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Loan",
@@ -307,6 +352,26 @@
             {
               "name": "expenseId",
               "description": "The unique identifier of the expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/couples/{coupleId}/recurringExpenses/{recurringExpenseId}",
+        "definition": {
+          "entityName": "RecurringExpense",
+          "schema": {
+            "$ref": "#/backend/entities/RecurringExpense"
+          },
+          "description": "Stores recurring expense records for the couple.",
+          "params": [
+            {
+              "name": "coupleId",
+              "description": "The unique identifier of the couple."
+            },
+            {
+              "name": "recurringExpenseId",
+              "description": "The unique identifier of the recurring expense."
             }
           ]
         }
