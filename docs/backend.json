@@ -60,6 +60,14 @@
         "categoryId": {
           "type": "string",
           "description": "Reference to Category. (Relationship: Category 1:N Expense) The category of expense."
+        },
+        "isPaid": {
+          "type": "boolean",
+          "description": "Indicates whether the expense has been paid."
+        },
+        "paymentDetails": {
+          "type": "string",
+          "description": "Details about the payment."
         }
       },
       "required": [
@@ -444,3 +452,4 @@
     "reasoning": "The Firestore structure is designed to facilitate a shared financial management application for a couple (Fabão and Tati), focusing on expense tracking, loan management, and consolidated reporting. The core principle is Authorization Independence, which is achieved by denormalizing data to avoid `get()` calls in security rules, thus ensuring atomicity for transactions and batch operations. This also enhances debuggability.  The structure is segregated to maintain homogeneous security postures within each collection. Access is modeled primarily through path-based ownership and membership maps where necessary.\n\nSpecifically, each user has their own profile stored in `/users/{userId}`. The application is designed to be used by a couple, and the relationship between them and their shared financial data (expenses, loans, and consolidated reports) will be modeled using a 'couple' document. This document will contain a `members` map listing both users with their roles (e.g., 'owner'). The unique ID of this document will serve as a link for accessing all shared data.\n\nExpenses, Loans, and MonthlyConsolidated documents are stored in subcollections under the `/couples/{coupleId}` document. This enforces a clear ownership model: each user can only access data associated with the couple they belong to. Moreover, the payerId, lenderId, and borrowerId in the Expense and Loan documents reference UserProfile documents. The Category documents are stored in the root collection `/categories`. Since those are predefined, they can be globally accessed.\n\nTo support QAPs (Rules are not Filters), segregation is employed. Data with different access requirements (e.g., public vs. private) are stored in separate collections. The path-based ownership ensures that listing operations can be secured by simply checking the `request.auth.uid` against the `userId` in the path or the `members` map in the `couple` document. \n\nDenormalization is used to copy authorization context into subcollections. For instance, the `couple` document's `members` map is copied into each document within the `/couples/{coupleId}/expenses` and `/couples/{coupleId}/loans` subcollections. This ensures that security rules can validate user access without needing to perform expensive `get()` operations, which can break atomicity.\n"
   }
 }
+    

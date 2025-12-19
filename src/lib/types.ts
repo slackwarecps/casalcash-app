@@ -22,6 +22,8 @@ export interface Expense extends FirestoreDoc {
   category: Category;
   date: Date | Timestamp;
   tipoDespesa?: 'recorrente' | 'pontual';
+  isPaid?: boolean;
+  paymentDetails?: string;
 }
 
 export interface Installment {

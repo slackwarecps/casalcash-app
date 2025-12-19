@@ -46,7 +46,12 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddExpense(values);
+    const newExpenseData = {
+      ...values,
+      isPaid: false,
+      paymentDetails: '',
+    };
+    onAddExpense(newExpenseData);
     form.reset();
     onOpenChange(false);
   }
