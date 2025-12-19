@@ -96,7 +96,7 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
                         </Button>
                          <Link href={`/loans/${loan.id}`} passHref>
                            <Button variant="outline" size="icon" asChild>
-                            <a aria-label={`Ver detalhes de ${loan.description}`}><ChevronRight className="h-4 w-4" /></a>
+                            <span aria-label={`Ver detalhes de ${loan.description}`}><ChevronRight className="h-4 w-4" /></span>
                            </Button>
                         </Link>
                         <AlertDialog>
