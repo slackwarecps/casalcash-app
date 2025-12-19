@@ -10,12 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { categories, Category, Expense, SplitType, User } from '@/lib/types';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parse } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface AddExpenseDialogProps {
   isOpen: boolean;
@@ -97,47 +93,28 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                 control={form.control}
                 name="date"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Data da despesa</FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          placeholder="DD/MM/AAAA"
-                          className="pr-10"
-                           {...{...field, value: field.value ? format(field.value, 'dd/MM/yyyy') : '', 
-                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-                              const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                              if (!isNaN(date.valueOf())) {
-                                field.onChange(date);
-                              }
-                           }
-                          }}
-                          onBlur={(e) => {
+                    <FormControl>
+                      <Input
+                        placeholder="DD/MM/AAAA"
+                         {...{...field, value: field.value ? format(field.value, 'dd/MM/yyyy') : '', 
+                          onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
                             const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
                             if (!isNaN(date.valueOf())) {
                               field.onChange(date);
                             }
-                            field.onBlur();
-                          }}
-                        />
-                      </FormControl>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" aria-label="Abrir calendário">
-                            <CalendarIcon className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            locale={ptBR}
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                         }
+                        }}
+                        onBlur={(e) => {
+                          const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
+                          if (!isNaN(date.valueOf())) {
+                            field.onChange(date);
+                          }
+                          field.onBlur();
+                        }}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
