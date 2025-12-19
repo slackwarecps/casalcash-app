@@ -16,16 +16,16 @@ import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Email inválido.' }).default('teste@teste.com.br'),
-  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres.' }).default('teste123'),
+  email: z.string().email({ message: 'Email inválido.' }).default('fabio.alvaro@gmail.com'),
+  password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres.' }).default('senha123'),
 });
 
 export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: 'teste@teste.com.br',
-      password: 'teste123',
+      email: 'fabio.alvaro@gmail.com',
+      password: 'senha123',
     },
   });
   const router = useRouter();
