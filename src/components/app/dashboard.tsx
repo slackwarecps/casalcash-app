@@ -20,6 +20,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
+  ChartLegendContent,
 } from "@/components/ui/chart"
 
 interface DashboardProps {
@@ -307,3 +308,5 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
     </Card>
   );
 }
+
+    
