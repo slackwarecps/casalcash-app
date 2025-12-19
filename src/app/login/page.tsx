@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignIn, useAuth, useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }).default('teste@teste.com.br'),
@@ -48,8 +49,7 @@ export default function LoginPage() {
         return;
     }
     try {
-        // Here we use await because we want to catch the error on this screen
-        await initiateEmailSignIn(auth, values.email, values.password);
+        await signInWithEmailAndPassword(auth, values.email, values.password);
         // The useEffect will handle the redirect on successful login
     } catch (error) {
       let errorMessage = 'Ocorreu um erro ao tentar fazer login.';
