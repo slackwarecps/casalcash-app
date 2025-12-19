@@ -32,6 +32,7 @@ export default function AppHeader({
   const router = useRouter();
 
   const handleLogout = async () => {
+    if(!firebaseApp) return;
     const auth = getAuth(firebaseApp);
     await signOut(auth);
     router.push('/login');
@@ -49,7 +50,7 @@ export default function AppHeader({
 
   return (
     <header className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg bg-card border shadow-sm">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 self-center">
         <Landmark className="h-8 w-8 text-primary" />
         <h1 className="text-4xl font-headline font-bold">CasalCash</h1>
       </div>
@@ -58,13 +59,13 @@ export default function AppHeader({
         <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <span className="w-40 text-center font-medium capitalize">{monthName}</span>
+        <span className="w-32 sm:w-40 text-center font-medium capitalize">{monthName}</span>
         <Button variant="outline" size="icon" onClick={handleNextMonth}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <Button onClick={onAddExpense}>
           <PlusCircle />
           Gasto

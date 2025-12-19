@@ -25,7 +25,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground font-body">
+    <main className="min-h-screen bg-background text-foreground font-body p-4 md:p-8 flex justify-center">
       <CasalCashApp />
     </main>
   );

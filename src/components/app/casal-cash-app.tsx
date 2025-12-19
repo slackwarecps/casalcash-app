@@ -19,14 +19,14 @@ import {
   deleteDocumentNonBlocking,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, Timestamp, getDoc, setDoc, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, doc, Timestamp, getDoc, setDoc, writeBatch, getDocs, query } from 'firebase/firestore';
 import { initialExpenses, initialLoans } from '@/lib/data';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
-  const [selectedMonth, setSelectedMonth] = useState(new Date('2025-10-01'));
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -57,7 +57,8 @@ export default function CasalCashApp() {
     const setup = async () => {
       const coupleDocRef = doc(firestore, 'couples', COUPLE_ID);
       const expensesColRef = collection(coupleDocRef, 'expenses');
-      
+      const loansColRef = collection(coupleDocRef, 'loans');
+
       try {
         // Ensure couple membership
         const coupleDocSnap = await getDoc(coupleDocRef);
@@ -66,7 +67,8 @@ export default function CasalCashApp() {
         }
 
         // Seed expenses if collection is empty
-        const expensesSnap = await getDocs(expensesColRef);
+        const expensesQuery = query(expensesColRef);
+        const expensesSnap = await getDocs(expensesQuery);
         if (expensesSnap.empty && initialExpenses.length > 0) {
             const batch = writeBatch(firestore);
             initialExpenses.forEach(expense => {
@@ -82,6 +84,47 @@ export default function CasalCashApp() {
             await batch.commit();
             toast({ title: 'Dados de exemplo carregados!', description: `${initialExpenses.length} despesas foram adicionadas.` });
         }
+
+        // Seed loans if collection is empty
+        const loansQuery = query(loansColRef);
+        const loansSnap = await getDocs(loansQuery);
+        if (loansSnap.empty && initialLoans.length > 0) {
+            const batch = writeBatch(firestore);
+            initialLoans.forEach(loanData => {
+              const newLoanId = doc(collection(firestore, 'temp')).id;
+              const installmentAmount = loanData.totalAmount / loanData.installments;
+              const installmentDetails: Installment[] = [];
+              const startDate = loanData.date as Date;
+              const november2025 = new Date('2025-11-01');
+
+              for(let i=0; i<loanData.installments; i++) {
+                const dueDate = addMonths(startDate, i);
+                installmentDetails.push({
+                  id: doc(collection(firestore, 'temp')).id,
+                  loanId: newLoanId,
+                  installmentNumber: i + 1,
+                  amount: installmentAmount,
+                  dueDate: Timestamp.fromDate(dueDate),
+                  isPaid: dueDate < november2025,
+                  paidDate: dueDate < november2025 ? Timestamp.fromDate(dueDate) : null,
+                });
+              }
+
+              const newLoan: Loan = {
+                ...loanData, 
+                id: newLoanId, 
+                paidInstallments: installmentDetails.filter(i => i.isPaid).length,
+                installmentDetails,
+                date: Timestamp.fromDate(startDate),
+                members: { [user.uid]: 'owner' }
+              };
+              const loanDocRef = doc(loansColRef, newLoanId);
+              batch.set(loanDocRef, newLoan);
+            });
+
+            await batch.commit();
+            toast({ title: 'Dados de exemplo carregados!', description: `${initialLoans.length} empréstimos foram adicionados.` });
+        }
         
       } catch (error) {
         console.error("Error during initial setup:", error);
@@ -89,8 +132,8 @@ export default function CasalCashApp() {
       }
     };
 
-    setup();
-  }, [firestore, user]);
+    // setup();
+  }, [firestore, user, toast]);
 
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
@@ -201,7 +244,7 @@ export default function CasalCashApp() {
   }, [filteredExpenses]);
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
+    <div className="flex flex-col gap-8 w-full">
       <AppHeader
         currentUser={currentUser}
         onUserChange={setCurrentUser}
@@ -211,7 +254,7 @@ export default function CasalCashApp() {
         onMonthChange={setSelectedMonth}
       />
       
-      <div className="grid grid-cols-1 gap-8 mt-8">
+      <div className="grid grid-cols-1 gap-8">
         <Dashboard 
           expenses={expensesWithDateObjects} 
           loans={loansWithDateObjects} 
