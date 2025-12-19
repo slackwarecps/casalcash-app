@@ -19,13 +19,14 @@ import {
   deleteDocumentNonBlocking,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, Timestamp, getDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, Timestamp, getDoc, setDoc, writeBatch, getDocs } from 'firebase/firestore';
+import { initialExpenses, initialLoans } from '@/lib/data';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState(new Date('2025-10-01'));
   const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -49,31 +50,46 @@ export default function CasalCashApp() {
   const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
 
-  // Ensure user is part of the couple document
+  // Ensure user is part of the couple document and seed data
   useEffect(() => {
     if (!firestore || !user?.uid) return;
 
-    const ensureCoupleMembership = async () => {
+    const setup = async () => {
       const coupleDocRef = doc(firestore, 'couples', COUPLE_ID);
+      const expensesColRef = collection(coupleDocRef, 'expenses');
+      
       try {
+        // Ensure couple membership
         const coupleDocSnap = await getDoc(coupleDocRef);
-        if (user.uid) {
-          if (coupleDocSnap.exists()) {
-            const coupleData = coupleDocSnap.data();
-            if (!coupleData.members || !coupleData.members[user.uid]) {
-              const updatedMembers = { ...(coupleData.members || {}), [user.uid]: 'owner' };
-              await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
-            }
-          } else {
-            await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } });
-          }
+        if (!coupleDocSnap.exists() || !coupleDocSnap.data().members?.[user.uid]) {
+            await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } }, { merge: true });
         }
+
+        // Seed expenses if collection is empty
+        const expensesSnap = await getDocs(expensesColRef);
+        if (expensesSnap.empty && initialExpenses.length > 0) {
+            const batch = writeBatch(firestore);
+            initialExpenses.forEach(expense => {
+                const docRef = doc(expensesColRef);
+                const newExpense = {
+                    ...expense,
+                    id: docRef.id,
+                    date: Timestamp.fromDate(expense.date as Date),
+                    members: { [user.uid]: 'owner' }
+                };
+                batch.set(docRef, newExpense);
+            });
+            await batch.commit();
+            toast({ title: 'Dados de exemplo carregados!', description: `${initialExpenses.length} despesas foram adicionadas.` });
+        }
+        
       } catch (error) {
-        console.error("Error ensuring couple membership:", error);
+        console.error("Error during initial setup:", error);
+        toast({ title: 'Erro na configuração inicial', description: 'Não foi possível garantir a associação ou carregar os dados.', variant: 'destructive' });
       }
     };
 
-    ensureCoupleMembership();
+    setup();
   }, [firestore, user]);
 
 
