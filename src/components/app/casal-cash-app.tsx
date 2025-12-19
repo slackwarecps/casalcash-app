@@ -61,65 +61,67 @@ export default function CasalCashApp() {
       const coupleDocSnap = await getDoc(coupleDocRef);
 
       // Ensure user is a member of the couple
-      if (coupleDocSnap.exists()) {
-        const coupleData = coupleDocSnap.data();
-        if (user.uid && (!coupleData.members || !coupleData.members[user.uid])) {
-          const updatedMembers = { ...(coupleData.members || {}), [user.uid]: 'owner' };
-          await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
+      if (user.uid) {
+        if (coupleDocSnap.exists()) {
+          const coupleData = coupleDocSnap.data();
+          if (!coupleData.members || !coupleData.members[user.uid]) {
+            const updatedMembers = { ...(coupleData.members || {}), [user.uid]: 'owner' };
+            await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
+          }
+        } else {
+          await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } });
         }
-      } else {
-        await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } });
       }
 
-      // Check if collections are empty before seeding
-      const expensesSnap = await getDocs(expensesCollection);
-      const loansSnap = await getDocs(loansCollection);
+      // // Check if collections are empty before seeding
+      // const expensesSnap = await getDocs(expensesCollection);
+      // const loansSnap = await getDocs(loansCollection);
 
-      if (expensesSnap.empty && loansSnap.empty) {
-        console.log("Database is empty. Seeding initial data...");
-        toast({ title: "Populando banco de dados inicial...", description: "Aguarde um momento." });
+      // if (expensesSnap.empty && loansSnap.empty && initialExpenses.length > 0 && initialLoans.length > 0) {
+      //   console.log("Database is empty. Seeding initial data...");
+      //   toast({ title: "Populando banco de dados inicial...", description: "Aguarde um momento." });
 
-        const batch = writeBatch(firestore);
+      //   const batch = writeBatch(firestore);
 
-        initialExpenses.forEach(expenseData => {
-          const docRef = doc(collection(firestore, 'couples', COUPLE_ID, 'expenses'));
-          const newExpense = { 
-            ...expenseData, 
-            date: Timestamp.fromDate(expenseData.date as Date),
-            members: { [user.uid]: 'owner' } // Add members for security rules
-          };
-          batch.set(docRef, newExpense);
-        });
+      //   initialExpenses.forEach(expenseData => {
+      //     const docRef = doc(collection(firestore, 'couples', COUPLE_ID, 'expenses'));
+      //     const newExpense = { 
+      //       ...expenseData, 
+      //       date: Timestamp.fromDate(expenseData.date as Date),
+      //       members: { [user.uid]: 'owner' } // Add members for security rules
+      //     };
+      //     batch.set(docRef, newExpense);
+      //   });
 
-        initialLoans.forEach(loanData => {
-          const newLoanId = doc(collection(firestore, 'temp')).id;
-          const loanDocRef = doc(collection(firestore, 'couples', COUPLE_ID, 'loans'), newLoanId);
+      //   initialLoans.forEach(loanData => {
+      //     const newLoanId = doc(collection(firestore, 'temp')).id;
+      //     const loanDocRef = doc(collection(firestore, 'couples', COUPLE_ID, 'loans'), newLoanId);
           
-          const newLoan: Loan = {
-            ...(loanData as any),
-            id: newLoanId,
-            date: Timestamp.fromDate(loanData.date as Date),
-            installmentDetails: loanData.installmentDetails.map((inst: any) => ({
-                ...inst,
-                loanId: newLoanId, // Ensure installment has correct new loanId
-                dueDate: Timestamp.fromDate(inst.dueDate as Date),
-                paidDate: inst.paidDate ? Timestamp.fromDate(inst.paidDate as Date) : null,
-            })),
-            members: { [user.uid]: 'owner' } // Add members for security rules
-          };
-          batch.set(loanDocRef, newLoan);
-        });
+      //     const newLoan: Loan = {
+      //       ...(loanData as any),
+      //       id: newLoanId,
+      //       date: Timestamp.fromDate(loanData.date as Date),
+      //       installmentDetails: loanData.installmentDetails.map((inst: any) => ({
+      //           ...inst,
+      //           loanId: newLoanId, // Ensure installment has correct new loanId
+      //           dueDate: Timestamp.fromDate(inst.dueDate as Date),
+      //           paidDate: inst.paidDate ? Timestamp.fromDate(inst.paidDate as Date) : null,
+      //       })),
+      //       members: { [user.uid]: 'owner' } // Add members for security rules
+      //     };
+      //     batch.set(loanDocRef, newLoan);
+      //   });
 
-        try {
-          await batch.commit();
-          toast({ title: "Banco de dados populado!", description: "Os dados de exemplo foram carregados." });
-           // This will trigger a re-fetch in useCollection hooks, but it's a bit of a hack.
-          window.location.reload();
-        } catch (e) {
-          console.error("Error seeding database:", e);
-          toast({ title: "Erro ao popular o banco de dados.", variant: "destructive" });
-        }
-      }
+      //   try {
+      //     await batch.commit();
+      //     toast({ title: "Banco de dados populado!", description: "Os dados de exemplo foram carregados." });
+      //      // This will trigger a re-fetch in useCollection hooks, but it's a bit of a hack.
+      //     window.location.reload();
+      //   } catch (e) {
+      //     console.error("Error seeding database:", e);
+      //     toast({ title: "Erro ao popular o banco de dados.", variant: "destructive" });
+      //   }
+      // }
     };
 
     seedDatabase();
