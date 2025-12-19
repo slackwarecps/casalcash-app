@@ -112,11 +112,11 @@ export default function RecurringExpensesPage() {
                     </TableCell>
                     <TableCell><Badge variant="outline">{expense.split}</Badge></TableCell>
                     <TableCell className="text-right">
-                       {/* <Link href={`/recurring-expenses/${expense.id}`}>
+                       <Link href={`/recurring-expenses/${expense.id}`}>
                          <Button variant="ghost" size="icon" asChild>
                            <span><Pencil className="h-4 w-4" /></span>
                          </Button>
-                       </Link> */}
+                       </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon">
