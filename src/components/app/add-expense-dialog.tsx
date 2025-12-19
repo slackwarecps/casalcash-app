@@ -101,18 +101,25 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                     <FormLabel>Data da despesa</FormLabel>
                     <div className="relative">
                       <FormControl>
-                          <Input
-                            {...field}
-                            value={field.value ? format(field.value, 'dd/MM/yyyy') : ''}
-                            onChange={(e) => {
-                                const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                                if (!isNaN(date.getTime())) {
-                                    field.onChange(date);
-                                }
-                            }}
-                            placeholder="DD/MM/AAAA"
-                            className="pr-10"
-                          />
+                        <Input
+                          placeholder="DD/MM/AAAA"
+                          className="pr-10"
+                           {...{...field, value: field.value ? format(field.value, 'dd/MM/yyyy') : '', 
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                              const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
+                              if (!isNaN(date.valueOf())) {
+                                field.onChange(date);
+                              }
+                           }
+                          }}
+                          onBlur={(e) => {
+                            const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
+                            if (!isNaN(date.valueOf())) {
+                              field.onChange(date);
+                            }
+                            field.onBlur();
+                          }}
+                        />
                       </FormControl>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -126,9 +133,6 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
                             initialFocus
                           />
                         </PopoverContent>
