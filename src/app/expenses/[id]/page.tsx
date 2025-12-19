@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, CalendarIcon, Loader2 } from 'lucide-react';
 import { useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -38,6 +39,7 @@ export default function EditExpensePage() {
   const params = useParams();
   const { id } = params;
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const expenseDocRef = useMemoFirebase(() => {
     if (!id || !firestore) return null;
@@ -48,6 +50,14 @@ export default function EditExpensePage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: '',
+      amount: 0,
+      paidBy: 'Fabão',
+      split: '50/50',
+      category: 'Outros',
+      date: new Date(),
+    }
   });
 
   useEffect(() => {
