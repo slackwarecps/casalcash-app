@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, User, Users } from 'lucide-react';
+import { FileStack, HandCoins, Loader2, Sparkles, User, Users } from 'lucide-react';
 import type { Expense, Loan, User as UserType } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { reconcileDebtsAction } from '@/app/actions';
@@ -36,6 +36,15 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
     .reduce((acc, exp) => acc + exp.amount, 0);
     
   const monthName = format(selectedMonth, 'MMMM', { locale: ptBR });
+
+  const activeLoans = loans.filter(loan => loan.paidInstallments < loan.installments);
+  const totalActiveLoans = activeLoans.length;
+
+  const remainingLoanAmount = activeLoans.reduce((acc, loan) => {
+    const installmentValue = loan.totalAmount / loan.installments;
+    const remainingInstallments = loan.installments - loan.paidInstallments;
+    return acc + (remainingInstallments * installmentValue);
+  }, 0);
 
   const handleReconciliation = async () => {
     setIsLoading(true);
@@ -74,14 +83,6 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
     const loanDebts = loans.flatMap(loan => {
       const loanDebtsList = [];
       const installmentValue = loan.totalAmount / loan.installments;
-      const startOfSelectedMonth = startOfMonth(selectedMonth);
-
-      for (let i = 0; i < loan.paidInstallments; i++) {
-        const paymentMonth = addMonths(loan.date, i);
-        if (isWithinInterval(paymentMonth, { start: startOfSelectedMonth, end: new Date() })) {
-           // This logic is complex, let's simplify and just consider the next payment due this month
-        }
-      }
       
       const nextPaymentMonth = addMonths(loan.date, loan.paidInstallments);
        if (nextPaymentMonth.getMonth() === selectedMonth.getMonth() && nextPaymentMonth.getFullYear() === selectedMonth.getFullYear()) {
@@ -129,8 +130,8 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
         <CardTitle className="text-2xl capitalize">Resumo de {monthName}</CardTitle>
         <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-background/70">
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="bg-background/70 md:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Despesas</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -157,9 +158,27 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth 
             <div className="text-2xl font-bold">{formatCurrency(tatiPaid)}</div>
           </CardContent>
         </Card>
+        <Card className="bg-background/70">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Empréstimos Ativos</CardTitle>
+            <FileStack className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalActiveLoans}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-background/70">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Falta Pagar (Emp.)</CardTitle>
+            <HandCoins className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
+          </CardContent>
+        </Card>
         
         {(aiResult || aiError) && (
-            <div className="md:col-span-3 mt-4 animate-in fade-in-50 duration-500">
+            <div className="md:col-span-2 lg:col-span-5 mt-4 animate-in fade-in-50 duration-500">
                 {aiResult && (
                     <Alert className="border-accent bg-accent/10">
                         <Sparkles className="h-4 w-4 !text-accent" />
