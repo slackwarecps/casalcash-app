@@ -19,14 +19,13 @@ import {
   deleteDocumentNonBlocking,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, Timestamp, getDoc, setDoc, writeBatch, getDocs } from 'firebase/firestore';
-import { initialExpenses, initialLoans } from '@/lib/data';
+import { collection, doc, Timestamp, getDoc, setDoc } from 'firebase/firestore';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
-  const [selectedMonth, setSelectedMonth] = useState(new Date('2025-10-01T12:00:00Z'));
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -47,85 +46,35 @@ export default function CasalCashApp() {
     return collection(firestore, 'couples', COUPLE_ID, 'loans');
   }, [firestore, user]);
 
-  const { data: expenses, isLoading: isLoadingExpenses, error: expensesError } = useCollection<Expense>(expensesCollection);
-  const { data: loans, isLoading: isLoadingLoans, error: loansError } = useCollection<Loan>(loansCollection);
+  const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
+  const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
 
-  // Seeding logic
+  // Ensure user is part of the couple document
   useEffect(() => {
     if (!firestore || !user?.uid) return;
 
-    const seedDatabase = async () => {
-      if (!expensesCollection || !loansCollection) return;
-
+    const ensureCoupleMembership = async () => {
       const coupleDocRef = doc(firestore, 'couples', COUPLE_ID);
-      const coupleDocSnap = await getDoc(coupleDocRef);
-
-      // Ensure user is a member of the couple
-      if (user.uid) {
-        if (coupleDocSnap.exists()) {
-          const coupleData = coupleDocSnap.data();
-          if (!coupleData.members || !coupleData.members[user.uid]) {
-            const updatedMembers = { ...(coupleData.members || {}), [user.uid]: 'owner' };
-            await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
+      try {
+        const coupleDocSnap = await getDoc(coupleDocRef);
+        if (user.uid) {
+          if (coupleDocSnap.exists()) {
+            const coupleData = coupleDocSnap.data();
+            if (!coupleData.members || !coupleData.members[user.uid]) {
+              const updatedMembers = { ...(coupleData.members || {}), [user.uid]: 'owner' };
+              await setDoc(coupleDocRef, { members: updatedMembers }, { merge: true });
+            }
+          } else {
+            await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } });
           }
-        } else {
-          await setDoc(coupleDocRef, { members: { [user.uid]: 'owner' } });
         }
+      } catch (error) {
+        console.error("Error ensuring couple membership:", error);
       }
-
-      // // Check if collections are empty before seeding
-      // const expensesSnap = await getDocs(expensesCollection);
-      // const loansSnap = await getDocs(loansCollection);
-
-      // if (expensesSnap.empty && loansSnap.empty && initialExpenses.length > 0 && initialLoans.length > 0) {
-      //   console.log("Database is empty. Seeding initial data...");
-      //   toast({ title: "Populando banco de dados inicial...", description: "Aguarde um momento." });
-
-      //   const batch = writeBatch(firestore);
-
-      //   initialExpenses.forEach(expenseData => {
-      //     const docRef = doc(collection(firestore, 'couples', COUPLE_ID, 'expenses'));
-      //     const newExpense = { 
-      //       ...expenseData, 
-      //       date: Timestamp.fromDate(expenseData.date as Date),
-      //       members: { [user.uid]: 'owner' } // Add members for security rules
-      //     };
-      //     batch.set(docRef, newExpense);
-      //   });
-
-      //   initialLoans.forEach(loanData => {
-      //     const newLoanId = doc(collection(firestore, 'temp')).id;
-      //     const loanDocRef = doc(collection(firestore, 'couples', COUPLE_ID, 'loans'), newLoanId);
-          
-      //     const newLoan: Loan = {
-      //       ...(loanData as any),
-      //       id: newLoanId,
-      //       date: Timestamp.fromDate(loanData.date as Date),
-      //       installmentDetails: loanData.installmentDetails.map((inst: any) => ({
-      //           ...inst,
-      //           loanId: newLoanId, // Ensure installment has correct new loanId
-      //           dueDate: Timestamp.fromDate(inst.dueDate as Date),
-      //           paidDate: inst.paidDate ? Timestamp.fromDate(inst.paidDate as Date) : null,
-      //       })),
-      //       members: { [user.uid]: 'owner' } // Add members for security rules
-      //     };
-      //     batch.set(loanDocRef, newLoan);
-      //   });
-
-      //   try {
-      //     await batch.commit();
-      //     toast({ title: "Banco de dados populado!", description: "Os dados de exemplo foram carregados." });
-      //      // This will trigger a re-fetch in useCollection hooks, but it's a bit of a hack.
-      //     window.location.reload();
-      //   } catch (e) {
-      //     console.error("Error seeding database:", e);
-      //     toast({ title: "Erro ao popular o banco de dados.", variant: "destructive" });
-      //   }
-      // }
     };
 
-    seedDatabase();
-  }, [firestore, user, expensesCollection, loansCollection]);
+    ensureCoupleMembership();
+  }, [firestore, user]);
 
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
