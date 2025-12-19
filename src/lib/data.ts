@@ -42,22 +42,22 @@ export const initialExpenses: Expense[] = [
 export const initialLoans: Loan[] = [
     {
         id: 'l1',
-        description: 'Notebook Tati',
-        totalAmount: 5000,
+        description: 'Máquina de Lavar',
+        totalAmount: 2773.92, // 24 * 115.58
         lender: 'Fabão',
         borrower: 'Tati',
-        installments: 10,
-        paidInstallments: 3,
-        date: new Date('2024-03-15T18:00:00Z'),
+        installments: 24,
+        paidInstallments: 8, // Assuming payments from Dec/2023 to Jul/2024
+        date: new Date('2023-12-04T10:00:00Z'),
     },
     {
         id: 'l2',
-        description: 'Máquina de Lavar',
-        totalAmount: 2200,
-        lender: 'Tati',
-        borrower: 'Fabão',
-        installments: 5,
-        paidInstallments: 1,
-        date: new Date('2024-05-20T11:00:00Z'),
+        description: 'Cama Queen',
+        totalAmount: 4000,
+        lender: 'Fabão',
+        borrower: 'Tati',
+        installments: 20,
+        paidInstallments: 0,
+        date: new Date('2025-07-04T10:00:00Z'),
     }
 ];
