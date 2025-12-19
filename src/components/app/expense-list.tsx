@@ -73,7 +73,7 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Pago S/N</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Pago por</TableHead>
