@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { initialExpenses, initialLoans } from '@/lib/data';
 import type { Expense, Loan, User, Installment } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import Dashboard from '@/components/app/dashboard';
@@ -10,12 +9,21 @@ import LoanList from '@/components/app/loan-list';
 import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, isWithinInterval, addMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, addMonths, serverTimestamp } from 'date-fns';
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase,
+  addDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+  setDocumentNonBlocking
+} from '@/firebase';
+import { collection, query, where, doc, Timestamp } from 'firebase/firestore';
+
+const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-  const [loans, setLoans] = useState<Loan[]>(initialLoans);
   const [selectedMonth, setSelectedMonth] = useState(new Date('2025-10-01T12:00:00Z'));
   const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
@@ -23,29 +31,42 @@ export default function CasalCashApp() {
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  // Firestore collections
+  const expensesCollection = useMemoFirebase(() => collection(firestore, 'couples', COUPLE_ID, 'expenses'), [firestore]);
+  const loansCollection = useMemoFirebase(() => collection(firestore, 'couples', COUPLE_ID, 'loans'), [firestore]);
+
+  const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
+  const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
-    const newExpense = { ...expense, id: Date.now().toString() };
-    setExpenses(prev => [newExpense, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
+    const newExpense = { 
+      ...expense, 
+      date: Timestamp.fromDate(expense.date), // Convert Date to Firestore Timestamp
+    };
+    addDocumentNonBlocking(expensesCollection, newExpense);
     toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
   };
 
   const deleteExpense = (id: string) => {
-    setExpenses(prev => prev.filter(exp => exp.id !== id));
+    const expenseDocRef = doc(firestore, 'couples', COUPLE_ID, 'expenses', id);
+    deleteDocumentNonBlocking(expenseDocRef);
     toast({ title: "Despesa removida.", variant: "destructive" });
   };
 
   const addLoan = (loan: Omit<Loan, 'id' | 'paidInstallments' | 'installmentDetails'>) => {
-    const newLoanId = Date.now().toString();
+    const newLoanId = doc(collection(firestore, 'temp')).id;
     const installmentAmount = loan.totalAmount / loan.installments;
     const installmentDetails: Installment[] = [];
+    
     for(let i=0; i<loan.installments; i++) {
       installmentDetails.push({
-        id: `${newLoanId}-inst-${i+1}`,
+        id: doc(collection(firestore, 'temp')).id,
         loanId: newLoanId,
         installmentNumber: i + 1,
         amount: installmentAmount,
-        dueDate: addMonths(loan.date, i),
+        dueDate: Timestamp.fromDate(addMonths(loan.date, i)),
         isPaid: false,
         paidDate: null,
       });
@@ -55,42 +76,69 @@ export default function CasalCashApp() {
        ...loan, 
        id: newLoanId, 
        paidInstallments: 0,
-       installmentDetails
+       installmentDetails,
+       date: Timestamp.fromDate(loan.date)
     };
+    
+    const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', newLoanId);
+    setDocumentNonBlocking(loanDocRef, newLoan, { merge: false });
 
-    setLoans(prev => [newLoan, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
     toast({ title: "Empréstimo adicionado!", description: `"${newLoan.description}" foi registrado.` });
   };
 
   const payInstallment = (loanId: string) => {
-    setLoans(prevLoans => prevLoans.map(loan => {
-      if (loan.id === loanId) {
-        let firstUnpaidInstallment = loan.installmentDetails.find(inst => !inst.isPaid);
-        if (firstUnpaidInstallment) {
-           const updatedInstallments = loan.installmentDetails.map(inst =>
-            inst.id === firstUnpaidInstallment!.id ? { ...inst, isPaid: true, paidDate: new Date() } : inst
-          );
-          const paidCount = updatedInstallments.filter(i => i.isPaid).length;
-          toast({ title: "Parcela paga!", description: `Uma parcela de "${loan.description}" foi paga.` });
-          return { ...loan, installmentDetails: updatedInstallments, paidInstallments: paidCount };
-        }
+    const loan = loans?.find(l => l.id === loanId);
+    if (loan) {
+      const firstUnpaidInstallment = loan.installmentDetails.find(inst => !inst.isPaid);
+      if (firstUnpaidInstallment) {
+        const updatedInstallments = loan.installmentDetails.map(inst =>
+          inst.id === firstUnpaidInstallment!.id ? { ...inst, isPaid: true, paidDate: Timestamp.now() } : inst
+        );
+        const paidCount = updatedInstallments.filter(i => i.isPaid).length;
+        
+        const updatedLoan = { ...loan, installmentDetails: updatedInstallments, paidInstallments: paidCount };
+        const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', loanId);
+        setDocumentNonBlocking(loanDocRef, updatedLoan, { merge: true });
+
+        toast({ title: "Parcela paga!", description: `Uma parcela de "${loan.description}" foi paga.` });
       }
-      return loan;
-    }));
+    }
   };
 
   const deleteLoan = (id: string) => {
-    setLoans(prev => prev.filter(loan => loan.id !== id));
+    const loanDocRef = doc(firestore, 'couples', COUPLE_ID, 'loans', id);
+    deleteDocumentNonBlocking(loanDocRef);
     toast({ title: "Empréstimo removido.", variant: "destructive" });
   };
-
+  
   const filteredExpenses = useMemo(() => {
+    if (!expenses) return [];
     const start = startOfMonth(selectedMonth);
     const end = endOfMonth(selectedMonth);
-    return expenses.filter(exp => isWithinInterval(exp.date, { start, end }));
+    return expenses.filter(exp => {
+      const expDate = (exp.date as unknown as Timestamp).toDate();
+      return isWithinInterval(expDate, { start, end })
+    });
   }, [expenses, selectedMonth]);
 
-  // Loans are not filtered by month to show their progress over time.
+  const loansWithDateObjects = useMemo(() => {
+    return (loans || []).map(loan => ({
+      ...loan,
+      date: (loan.date as unknown as Timestamp).toDate(),
+      installmentDetails: loan.installmentDetails.map(inst => ({
+        ...inst,
+        dueDate: (inst.dueDate as unknown as Timestamp).toDate(),
+        paidDate: inst.paidDate ? (inst.paidDate as unknown as Timestamp).toDate() : null,
+      }))
+    }));
+  }, [loans]);
+
+  const expensesWithDateObjects = useMemo(() => {
+    return (filteredExpenses || []).map(exp => ({
+      ...exp,
+      date: (exp.date as unknown as Timestamp).toDate()
+    }));
+  }, [filteredExpenses]);
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -105,8 +153,8 @@ export default function CasalCashApp() {
       
       <div className="grid grid-cols-1 gap-8 mt-8">
         <Dashboard 
-          expenses={filteredExpenses} 
-          loans={loans} 
+          expenses={expensesWithDateObjects} 
+          loans={loansWithDateObjects} 
           currentUser={currentUser} 
           selectedMonth={selectedMonth}
           preCreditBalance={preCreditBalance}
@@ -114,8 +162,8 @@ export default function CasalCashApp() {
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ExpenseList expenses={filteredExpenses} onDelete={deleteExpense} />
-          <LoanList loans={loans} onPayInstallment={payInstallment} onDelete={deleteLoan} />
+          <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses} />
+          <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans} />
         </div>
       </div>
 

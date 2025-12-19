@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export type User = "Fabão" | "Tati";
 
 export type Category = "Moradia" | "Transporte" | "Alimentação" | "Lazer" | "Saúde" | "Outros" | "Pet";
@@ -13,7 +15,7 @@ export interface Expense {
   paidBy: User;
   split: SplitType;
   category: Category;
-  date: Date;
+  date: Date | Timestamp;
 }
 
 export interface Installment {
@@ -21,8 +23,8 @@ export interface Installment {
   loanId: string;
   installmentNumber: number;
   amount: number;
-  dueDate: Date;
-  paidDate?: Date | null;
+  dueDate: Date | Timestamp;
+  paidDate?: Date | Timestamp | null;
   isPaid: boolean;
 }
 
@@ -33,7 +35,7 @@ export interface Loan {
   lender: User;
   borrower: User;
   installments: number;
-  paidInstallments: number; // This will be calculated from installments array
-  date: Date;
+  paidInstallments: number;
+  date: Date | Timestamp;
   installmentDetails: Installment[];
 }

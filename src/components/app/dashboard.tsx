@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileStack, HandCoins, Loader2, PiggyBank, Sparkles, User, Users } from 'lucide-react';
@@ -86,7 +86,7 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
 
     const loanDebts = loans.flatMap(loan => 
       loan.installmentDetails
-        .filter(inst => isSameMonth(inst.dueDate, selectedMonth) && !inst.isPaid)
+        .filter(inst => isSameMonth(inst.dueDate as Date, selectedMonth) && !inst.isPaid)
         .map(inst => ({
             from: loan.borrower,
             to: loan.lender,
