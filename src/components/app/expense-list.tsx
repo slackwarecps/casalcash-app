@@ -181,7 +181,6 @@ const ExpenseTable = ({ expenses, onDelete, onEditPayment }: { expenses: Expense
 export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseListProps) {
   const [editingPayment, setEditingPayment] = useState<Expense | null>(null);
   const [paidByFilter, setPaidByFilter] = useState<User | 'all'>('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'pontual' | 'recorrente'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   
   const firestore = useFirestore();
@@ -209,23 +208,26 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
   const filteredExpenses = useMemo(() => {
     return expenses
       .filter(expense => paidByFilter === 'all' || expense.paidBy === paidByFilter)
-      .filter(expense => typeFilter === 'all' || expense.tipoDespesa === typeFilter)
       .filter(expense => {
         if (statusFilter === 'all') return true;
         return statusFilter === 'paid' ? expense.isPaid : !expense.isPaid;
       });
-  }, [expenses, paidByFilter, typeFilter, statusFilter]);
+  }, [expenses, paidByFilter, statusFilter]);
 
   const geralExpenses = useMemo(() => {
-    return filteredExpenses.filter(e => e.split === '50/50');
+    return filteredExpenses.filter(e => e.split === '50/50' && e.tipoDespesa === 'pontual');
   }, [filteredExpenses]);
 
   const tatiExpenses = useMemo(() => {
-    return filteredExpenses.filter(e => e.split === '100% Tati');
+    return filteredExpenses.filter(e => e.split === '100% Tati' && e.tipoDespesa === 'pontual');
   }, [filteredExpenses]);
 
   const fabaoExpenses = useMemo(() => {
-    return filteredExpenses.filter(e => e.split === '100% Fabão');
+    return filteredExpenses.filter(e => e.split === '100% Fabão' && e.tipoDespesa === 'pontual');
+  }, [filteredExpenses]);
+  
+  const fixedExpenses = useMemo(() => {
+    return filteredExpenses.filter(e => e.tipoDespesa === 'recorrente');
   }, [filteredExpenses]);
 
 
@@ -246,14 +248,6 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                 <SelectItem value="Tati">Tati</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={typeFilter} onValueChange={(value: 'all' | 'pontual' | 'recorrente') => setTypeFilter(value)}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por tipo..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Tipos</SelectItem>
-                <SelectItem value="pontual">Variável</SelectItem>
-                <SelectItem value="recorrente">Fixa</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={statusFilter} onValueChange={(value: 'all' | 'paid' | 'unpaid') => setStatusFilter(value)}>
               <SelectTrigger><SelectValue placeholder="Filtrar por status..." /></SelectTrigger>
               <SelectContent>
@@ -266,10 +260,11 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="geral">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="geral">Geral (50/50)</TabsTrigger>
                     <TabsTrigger value="adicionais-tati">Adicionais Tati</TabsTrigger>
                     <TabsTrigger value="adicionais-fabao">Adicionais Fabão</TabsTrigger>
+                    <TabsTrigger value="fixas">Fixas</TabsTrigger>
                 </TabsList>
                 <TabsContent value="geral" className="mt-4">
                      <ExpenseTable expenses={geralExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
@@ -279,6 +274,9 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                 </TabsContent>
                 <TabsContent value="adicionais-fabao" className="mt-4">
                     <ExpenseTable expenses={fabaoExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                </TabsContent>
+                <TabsContent value="fixas" className="mt-4">
+                    <ExpenseTable expenses={fixedExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
                 </TabsContent>
             </Tabs>
         </CardContent>
