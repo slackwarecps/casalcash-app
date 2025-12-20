@@ -35,11 +35,13 @@ export default function EditPaymentDialog({ expense, isOpen, onOpenChange, onSav
   });
   
   useEffect(() => {
-    form.reset({
-      isPaid: expense.isPaid || false,
-      paymentDetails: expense.paymentDetails || '',
-    });
-  }, [expense, form]);
+    if (isOpen) {
+        form.reset({
+        isPaid: expense.isPaid || false,
+        paymentDetails: expense.paymentDetails || '',
+        });
+    }
+  }, [expense, form, isOpen]);
 
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -47,7 +49,12 @@ export default function EditPaymentDialog({ expense, isOpen, onOpenChange, onSav
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) {
+            form.reset();
+        }
+        onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Registrar Pagamento</DialogTitle>

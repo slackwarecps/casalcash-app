@@ -3,7 +3,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signOut, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { getAnalytics, Analytics } from 'firebase/analytics';
+import { getAnalytics, Analytics, isSupported } from 'firebase/analytics';
 
 // Using the configuration provided by the user.
 const firebaseConfig = {
@@ -32,10 +32,16 @@ export function initializeFirebase() {
 
 export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
-  let analytics;
+  let analytics: Analytics | null = null;
+  
   if (typeof window !== 'undefined') {
-    analytics = getAnalytics(firebaseApp);
+    isSupported().then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(firebaseApp);
+      }
+    });
   }
+
   return {
     firebaseApp,
     auth,

@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import EditPaymentDialog from './edit-payment-dialog';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -86,16 +86,14 @@ const ExpenseTable = ({ expenses, onDelete, onEditPayment }: { expenses: Expense
                                         {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
                                     </Badge>
                                 </div>
-                                {expense.tipoDespesa === 'recorrente' && (
-                                     <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                        {expense.isPaid ? (
-                                            <span className="flex items-center text-green-600"><CheckCircle className="h-4 w-4 mr-1"/> Pago</span>
-                                        ) : (
-                                            <span className="flex items-center text-red-600"><XCircle className="h-4 w-4 mr-1"/> Não Pago</span>
-                                        )}
-                                        {expense.paymentDetails && <span className="italic">| {expense.paymentDetails}</span>}
-                                     </div>
-                                )}
+                                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                    {expense.isPaid ? (
+                                        <span className="flex items-center text-green-600"><CheckCircle className="h-4 w-4 mr-1"/> Pago</span>
+                                    ) : (
+                                        <span className="flex items-center text-red-600"><XCircle className="h-4 w-4 mr-1"/> Não Pago</span>
+                                    )}
+                                    {expense.paymentDetails && <span className="italic">| {expense.paymentDetails}</span>}
+                                 </div>
                             </TableCell>
                             <TableCell>{formatCurrency(expense.amount)}</TableCell>
                             <TableCell>
@@ -198,8 +196,9 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
         paymentDetails: details,
     };
     
+    // Ensure date is a Timestamp if it's a JS Date
     if (updatedExpense.date instanceof Date) {
-        updatedExpense.date = updatedExpense.date;
+        updatedExpense.date = Timestamp.fromDate(updatedExpense.date);
     }
     
     setDocumentNonBlocking(expenseDocRef, updatedExpense, { merge: true });
