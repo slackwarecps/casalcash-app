@@ -60,7 +60,6 @@ const ExpenseTable = ({ expenses, onDelete, onEditPayment }: { expenses: Expense
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Pago S/N</TableHead>
                             <TableHead>Descrição</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>Pago por</TableHead>
@@ -71,7 +70,7 @@ const ExpenseTable = ({ expenses, onDelete, onEditPayment }: { expenses: Expense
                     <TableBody>
                         {paginatedExpenses.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center h-24">
+                            <TableCell colSpan={5} className="text-center h-24">
                             Nenhuma despesa encontrada para esta seleção.
                             </TableCell>
                         </TableRow>
@@ -79,21 +78,24 @@ const ExpenseTable = ({ expenses, onDelete, onEditPayment }: { expenses: Expense
                         paginatedExpenses.map((expense) => (
                             <TableRow key={expense.id}>
                             <TableCell>
-                                {expense.isPaid ? (
-                                <CheckCircle className="h-5 w-5 text-green-500" title="Pago"/>
-                                ) : (
-                                <XCircle className="h-5 w-5 text-red-500" title="Não Pago"/>
-                                )}
-                            </TableCell>
-                            <TableCell>
                                 <div className="font-medium">{expense.description}</div>
                                 <div className="text-sm text-muted-foreground flex flex-wrap gap-1 items-center">
-                                <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} -</span>
-                                <Badge variant="outline">{expense.category}</Badge>
-                                <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
-                                    {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
-                                </Badge>
+                                    <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} -</span>
+                                    <Badge variant="outline">{expense.category}</Badge>
+                                    <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
+                                        {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
+                                    </Badge>
                                 </div>
+                                {expense.tipoDespesa === 'recorrente' && (
+                                     <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                        {expense.isPaid ? (
+                                            <span className="flex items-center text-green-600"><CheckCircle className="h-4 w-4 mr-1"/> Pago</span>
+                                        ) : (
+                                            <span className="flex items-center text-red-600"><XCircle className="h-4 w-4 mr-1"/> Não Pago</span>
+                                        )}
+                                        {expense.paymentDetails && <span className="italic">| {expense.paymentDetails}</span>}
+                                     </div>
+                                )}
                             </TableCell>
                             <TableCell>{formatCurrency(expense.amount)}</TableCell>
                             <TableCell>
