@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileStack, HandCoins, Loader2, PiggyBank, Sparkles, User, Users, CheckCheck, CircleAlert, CreditCard } from 'lucide-react';
-import type { Expense, Loan, User as UserType, Category } from '@/lib/types';
+import type { Expense, Loan, User as UserType, Category, PreCredit } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { reconcileDebtsAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -25,14 +25,13 @@ import {
 
 interface DashboardProps {
   expenses: Expense[];
+  preCredits: PreCredit[];
   loans: Loan[];
   currentUser: UserType;
   selectedMonth: Date;
-  preCreditBalance: number;
-  onPreCreditBalanceChange: (value: number) => void;
 }
 
-export default function Dashboard({ expenses, loans, currentUser, selectedMonth, preCreditBalance, onPreCreditBalanceChange }: DashboardProps) {
+export default function Dashboard({ expenses, preCredits, loans, currentUser, selectedMonth }: DashboardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [aiResult, setAiResult] = useState<DebtReconciliationOutput | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -49,6 +48,13 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
   const tatiPaid = expenses
     .filter(e => e.paidBy === 'Tati')
     .reduce((acc, exp) => acc + exp.amount, 0);
+    
+  const fabaoPreCredits = preCredits
+    .filter(c => c.author === 'Fabão')
+    .reduce((acc, c) => acc + c.amount, 0);
+  const tatiPreCredits = preCredits
+    .filter(c => c.author === 'Tati')
+    .reduce((acc, c) => acc + c.amount, 0);
     
   const monthName = format(selectedMonth, 'MMMM', { locale: ptBR });
 
@@ -96,7 +102,7 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
     const partner1Name = 'Fabão';
     const partner2Name = 'Tati';
 
-    const debts = expenses.map(expense => {
+    const expenseDebts = expenses.map(expense => {
       let from: UserType, to: UserType, amount = 0;
       if (expense.split === '50/50') {
           from = expense.paidBy;
@@ -133,15 +139,15 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
         }))
     );
     
-    const preCreditDebt = {
-        from: 'Tati' as UserType,
-        to: 'Fabão' as UserType,
-        amount: preCreditBalance,
-        description: 'Crédito mensal da Tati'
-    };
+    const preCreditDebts = preCredits.map(credit => ({
+        from: credit.author,
+        to: credit.author === 'Fabão' ? 'Tati' : 'Fabão',
+        amount: credit.amount,
+        description: `Pré-crédito: ${credit.description}`
+    }));
     
     // @ts-ignore
-    const allDebts = [...debts, ...loanDebts, preCreditDebt];
+    const allDebts = [...expenseDebts, ...loanDebts, ...preCreditDebts];
 
     const result = await reconcileDebtsAction({
       debts: allDebts,
@@ -174,8 +180,8 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
         <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-2 gap-4 items-start">
-        <div className="grid grid-cols-2 md:grid-cols-3 col-span-1 md:col-span-3 lg:col-span-1 gap-4">
-             <Card className="bg-background/70 col-span-2 md:col-span-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 col-span-1 md:col-span-3 lg:col-span-1 gap-4">
+             <Card className="bg-background/70 col-span-2 md:col-span-4">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -184,25 +190,7 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
                     <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
                 </CardContent>
             </Card>
-             <Card className="bg-green-500/10 border-green-500/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Despesas Pagas</CardTitle>
-                    <CheckCheck className="h-4 w-4 text-green-700 dark:text-green-400" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold text-green-800 dark:text-green-300">{formatCurrency(totalPaid)}</div>
-                </CardContent>
-            </Card>
-             <Card className="bg-red-500/10 border-red-500/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-red-800 dark:text-red-300">Falta Pagar</CardTitle>
-                    <CircleAlert className="h-4 w-4 text-red-700 dark:text-red-400" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold text-red-800 dark:text-red-300">{formatCurrency(totalUnpaid)}</div>
-                </CardContent>
-            </Card>
-
+            
             <Card className="bg-background/70">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Fabão Pagou</CardTitle>
@@ -221,7 +209,27 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
                 <div className="text-2xl font-bold">{formatCurrency(tatiPaid)}</div>
             </CardContent>
             </Card>
+            
             <Card className="bg-background/70">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pré-créditos Fabão</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(fabaoPreCredits)}</div>
+            </CardContent>
+            </Card>
+            <Card className="bg-background/70">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pré-créditos Tati</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(tatiPreCredits)}</div>
+            </CardContent>
+            </Card>
+
+            <Card className="bg-background/70 col-span-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Empréstimos Ativos</CardTitle>
                 <FileStack className="h-4 w-4 text-muted-foreground" />
@@ -230,27 +238,13 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
                 <div className="text-2xl font-bold">{totalActiveLoans}</div>
             </CardContent>
             </Card>
-            <Card className="bg-background/70">
+            <Card className="bg-background/70 col-span-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Falta Pagar (Emp.)</CardTitle>
                 <HandCoins className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-background/70 col-span-2 md:col-span-3">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Crédito Mensal da Tati</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <Input 
-                    type="number"
-                    value={preCreditBalance}
-                    onChange={(e) => onPreCreditBalanceChange(parseFloat(e.target.value) || 0)}
-                    className="text-2xl font-bold p-0 border-0 focus-visible:ring-0"
-                />
             </CardContent>
             </Card>
         </div>
@@ -316,7 +310,7 @@ export default function Dashboard({ expenses, loans, currentUser, selectedMonth,
       </CardContent>
       <CardFooter className="flex-col items-start gap-4">
         <p className="text-sm text-muted-foreground">
-          Clique para usar a IA e descobrir o balanço final do mês, incluindo despesas, crédito e parcelas de empréstimos.
+          Clique para usar a IA e descobrir o balanço final do mês, incluindo despesas, pré-créditos e parcelas de empréstimos.
         </p>
         <Button onClick={handleReconciliation} disabled={isLoading}>
           {isLoading ? (

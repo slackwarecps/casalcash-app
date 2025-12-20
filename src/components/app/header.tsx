@@ -1,6 +1,6 @@
 "use client"
 
-import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2 } from 'lucide-react';
+import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2, PiggyBank } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { User } from '@/lib/types';
@@ -16,6 +16,7 @@ interface AppHeaderProps {
   onUserChange: (user: User) => void;
   onAddExpense: () => void;
   onAddLoan: () => void;
+  onAddPreCredit: () => void;
   onApplyRecurring: () => void;
   onDeleteCurrentMonth: () => void;
   selectedMonth: Date;
@@ -27,6 +28,7 @@ export default function AppHeader({
   onUserChange,
   onAddExpense,
   onAddLoan,
+  onAddPreCredit,
   onApplyRecurring,
   onDeleteCurrentMonth,
   selectedMonth,
@@ -73,6 +75,10 @@ export default function AppHeader({
         <Button onClick={onAddExpense}>
           <PlusCircle />
           Gasto
+        </Button>
+         <Button onClick={onAddPreCredit} variant="secondary">
+          <PiggyBank />
+          Pré-Crédito
         </Button>
         <Button onClick={onAddLoan} variant="secondary">
           <PlusCircle />

@@ -26,6 +26,15 @@ export interface Expense extends FirestoreDoc {
   paymentDetails?: string;
 }
 
+export interface PreCredit extends FirestoreDoc {
+  id: string;
+  description: string;
+  amount: number;
+  author: User;
+  date: Date | Timestamp;
+}
+
+
 export interface Installment {
   id: string;
   loanId: string;

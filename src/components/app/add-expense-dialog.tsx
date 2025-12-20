@@ -11,6 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { categories, Category, Expense, SplitType, User } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
+
 
 interface AddExpenseDialogProps {
   isOpen: boolean;
@@ -31,6 +39,7 @@ const formSchema = z.object({
 
 
 export default function AddExpenseDialog({ isOpen, onOpenChange, onAdd }: AddExpenseDialogProps) {
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -91,8 +100,8 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAdd }: AddExp
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Data</FormLabel>
-                    <FormControl>
-                      <Input placeholder="dd/mm/yyyy" {...field} />
+                     <FormControl>
+                       <Input placeholder="dd/mm/yyyy" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

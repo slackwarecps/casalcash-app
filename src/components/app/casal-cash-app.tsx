@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { Expense, Loan, User, Installment, RecurringExpense } from '@/lib/types';
+import type { Expense, Loan, User, Installment, RecurringExpense, PreCredit } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import Dashboard from '@/components/app/dashboard';
 import ExpenseList from '@/components/app/expense-list';
@@ -23,15 +23,18 @@ import {
 } from '@/firebase';
 import { collection, doc, Timestamp, writeBatch } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import AddPreCreditDialog from './add-pre-credit-dialog';
+import PreCreditList from './pre-credit-list';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function CasalCashApp() {
   const [currentUser, setCurrentUser] = useState<User>('Fabão');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
-
+  
   const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = useState(false);
+  const [isAddPreCreditDialogOpen, setIsAddPreCreditDialogOpen] = useState(false);
+  const [editingPreCredit, setEditingPreCredit] = useState<PreCredit | null>(null);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [isApplyRecurringDialogOpen, setIsApplyRecurringDialogOpen] = useState(false);
   const [isDeleteMonthDialogOpen, setIsDeleteMonthDialogOpen] = useState(false);
@@ -46,6 +49,11 @@ export default function CasalCashApp() {
     if (!user) return null;
     return collection(firestore, 'couples', COUPLE_ID, 'expenses');
   }, [firestore, user]);
+  
+  const preCreditsCollection = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, 'couples', COUPLE_ID, 'preCredits');
+  }, [firestore, user]);
 
   const loansCollection = useMemoFirebase(() => {
     if (!user) return null;
@@ -58,8 +66,55 @@ export default function CasalCashApp() {
   }, [firestore, user]);
 
   const { data: expenses, isLoading: isLoadingExpenses, forceRefetch: refetchExpenses } = useCollection<Expense>(expensesCollection);
+  const { data: preCredits, isLoading: isLoadingPreCredits } = useCollection<PreCredit>(preCreditsCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
   const { data: recurringExpenses, isLoading: isLoadingRecurringExpenses } = useCollection<RecurringExpense>(recurringExpensesCollection);
+
+  const handleAddOrUpdatePreCredit = (creditData: Omit<PreCredit, 'id' | 'date'> & { id?: string, date: string }) => {
+    if (!preCreditsCollection || !user?.uid) return;
+
+    const parsedDate = parse(creditData.date, 'dd/MM/yyyy', new Date());
+
+    if (creditData.id) {
+      // Update
+      const docRef = doc(preCreditsCollection, creditData.id);
+      const updatedCredit = {
+        ...creditData,
+        date: Timestamp.fromDate(parsedDate),
+      };
+      setDocumentNonBlocking(docRef, updatedCredit, { merge: true });
+      toast({ title: "Pré-crédito atualizado!", description: `"${creditData.description}" foi salvo.` });
+    } else {
+      // Add
+      const newCredit = {
+        description: creditData.description,
+        amount: creditData.amount,
+        author: creditData.author,
+        date: Timestamp.fromDate(parsedDate),
+        members: { [user.uid]: 'owner' }
+      };
+      addDocumentNonBlocking(preCreditsCollection, newCredit);
+      toast({ title: "Pré-crédito adicionado!", description: `"${newCredit.description}" foi registrado.` });
+    }
+  };
+
+  const handleDeletePreCredit = (id: string) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'couples', COUPLE_ID, 'preCredits', id);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: "Pré-crédito removido.", variant: "destructive" });
+  };
+  
+  const handleOpenEditPreCreditDialog = (credit: PreCredit) => {
+    setEditingPreCredit(credit);
+    setIsAddPreCreditDialogOpen(true);
+  };
+  
+  const handleOpenAddPreCreditDialog = () => {
+    setEditingPreCredit(null);
+    setIsAddPreCreditDialogOpen(true);
+  };
+
 
   const addExpense = (expenseData: Omit<Expense, 'id' | 'date'> & { date: string }) => {
     if (!expensesCollection || !user?.uid) return;
@@ -242,6 +297,16 @@ export default function CasalCashApp() {
       return isWithinInterval(expDate, { start, end })
     });
   }, [expenses, selectedMonth]);
+  
+  const filteredPreCredits = useMemo(() => {
+    if (!preCredits) return [];
+    const start = startOfMonth(selectedMonth);
+    const end = endOfMonth(selectedMonth);
+    return preCredits.filter(credit => {
+      const creditDate = (credit.date as unknown as Timestamp).toDate();
+      return isWithinInterval(creditDate, { start, end })
+    });
+  }, [preCredits, selectedMonth]);
 
   const loansWithDateObjects = useMemo(() => {
     return (loans || []).map(loan => ({
@@ -261,6 +326,14 @@ export default function CasalCashApp() {
       date: (exp.date as unknown as Timestamp).toDate()
     }));
   }, [filteredExpenses]);
+  
+  const preCreditsWithDateObjects = useMemo(() => {
+    return (filteredPreCredits || []).map(credit => ({
+      ...credit,
+      date: (credit.date as unknown as Timestamp).toDate()
+    }));
+  }, [filteredPreCredits]);
+
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
@@ -269,6 +342,7 @@ export default function CasalCashApp() {
         onUserChange={setCurrentUser}
         onAddExpense={() => setIsAddExpenseDialogOpen(true)}
         onAddLoan={() => setIsLoanDialogOpen(true)}
+        onAddPreCredit={handleOpenAddPreCreditDialog}
         onApplyRecurring={() => setIsApplyRecurringDialogOpen(true)}
         onDeleteCurrentMonth={() => setIsDeleteMonthDialogOpen(true)}
         selectedMonth={selectedMonth}
@@ -277,18 +351,23 @@ export default function CasalCashApp() {
       
       <div className="grid grid-cols-1 gap-8">
         <Dashboard 
-          expenses={expensesWithDateObjects} 
+          expenses={expensesWithDateObjects}
+          preCredits={preCreditsWithDateObjects}
           loans={loansWithDateObjects} 
           currentUser={currentUser} 
           selectedMonth={selectedMonth}
-          preCreditBalance={preCreditBalance}
-          onPreCreditBalanceChange={setPreCreditBalance}
         />
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses} />
           <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans} />
         </div>
+         <PreCreditList
+            preCredits={preCreditsWithDateObjects}
+            onEdit={handleOpenEditPreCreditDialog}
+            onDelete={handleDeletePreCredit}
+            isLoading={isLoadingPreCredits}
+          />
       </div>
       
       <AddExpenseDialog
@@ -300,6 +379,12 @@ export default function CasalCashApp() {
         isOpen={isLoanDialogOpen}
         onOpenChange={setIsLoanDialogOpen}
         onAddLoan={addLoan}
+      />
+       <AddPreCreditDialog
+        isOpen={isAddPreCreditDialogOpen}
+        onOpenChange={setIsAddPreCreditDialogOpen}
+        onSave={handleAddOrUpdatePreCredit}
+        preCredit={editingPreCredit}
       />
       <ApplyRecurringExpensesDialog
         isOpen={isApplyRecurringDialogOpen}
