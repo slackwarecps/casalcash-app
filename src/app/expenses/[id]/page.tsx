@@ -53,6 +53,17 @@ export default function EditExpensePage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: '',
+      amount: 0,
+      paidBy: 'Fabão',
+      split: '50/50',
+      category: 'Outros',
+      date: '',
+      tipoDespesa: 'pontual',
+      isPaid: false,
+      paymentDetails: '',
+    },
   });
 
   useEffect(() => {
