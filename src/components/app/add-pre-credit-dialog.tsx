@@ -12,12 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PreCredit } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import { format } from 'date-fns';
 
 interface AddPreCreditDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (credit: Omit<PreCredit, 'id' | 'date'> & { id?: string, date: string }) => void;
   preCredit: PreCredit | null;
+  selectedMonth: Date;
 }
 
 const formSchema = z.object({
@@ -29,34 +31,36 @@ const formSchema = z.object({
   }),
 });
 
-export default function AddPreCreditDialog({ isOpen, onOpenChange, onSave, preCredit }: AddPreCreditDialogProps) {
+export default function AddPreCreditDialog({ isOpen, onOpenChange, onSave, preCredit, selectedMonth }: AddPreCreditDialogProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: '',
       amount: 0,
       author: 'Tati',
-      date: new Date().toLocaleDateString('pt-BR'),
+      date: format(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1), 'dd/MM/yyyy'),
     },
   });
 
   useEffect(() => {
-    if (preCredit) {
-      form.reset({
-        description: preCredit.description,
-        amount: preCredit.amount,
-        author: preCredit.author,
-        date: (preCredit.date as Timestamp).toDate().toLocaleDateString('pt-BR'),
-      });
-    } else {
-      form.reset({
-        description: '',
-        amount: 0,
-        author: 'Tati',
-        date: new Date().toLocaleDateString('pt-BR'),
-      });
+    if (isOpen) {
+      if (preCredit) {
+        form.reset({
+          description: preCredit.description,
+          amount: preCredit.amount,
+          author: preCredit.author,
+          date: (preCredit.date as Timestamp).toDate().toLocaleDateString('pt-BR'),
+        });
+      } else {
+        form.reset({
+          description: '',
+          amount: 0,
+          author: 'Tati',
+          date: format(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1), 'dd/MM/yyyy'),
+        });
+      }
     }
-  }, [preCredit, form]);
+  }, [preCredit, form, isOpen, selectedMonth]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const dataToSave = {

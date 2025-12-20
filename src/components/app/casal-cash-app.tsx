@@ -82,6 +82,7 @@ export default function CasalCashApp() {
         ...creditData,
         date: Timestamp.fromDate(parsedDate),
       };
+      delete updatedCredit.id; // Remove id before saving
       setDocumentNonBlocking(docRef, updatedCredit, { merge: true });
       toast({ title: "Pré-crédito atualizado!", description: `"${creditData.description}" foi salvo.` });
     } else {
@@ -385,6 +386,7 @@ export default function CasalCashApp() {
         onOpenChange={setIsAddPreCreditDialogOpen}
         onSave={handleAddOrUpdatePreCredit}
         preCredit={editingPreCredit}
+        selectedMonth={selectedMonth}
       />
       <ApplyRecurringExpensesDialog
         isOpen={isApplyRecurringDialogOpen}
