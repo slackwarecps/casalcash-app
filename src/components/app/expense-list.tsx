@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Trash2, Pencil, CircleDollarSign, CheckCircle, XCircle } from 'lucide-react';
-import type { Expense, User } from '@/lib/types';
+import type { Expense, User, SplitType } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import {
   AlertDialog,
@@ -28,6 +28,7 @@ import EditPaymentDialog from './edit-payment-dialog';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -37,13 +38,151 @@ interface ExpenseListProps {
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
+const ExpenseTable = ({ expenses, onDelete, onEditPayment }: { expenses: Expense[], onDelete: (id: string) => void, onEditPayment: (expense: Expense) => void }) => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    const totalPages = Math.ceil(expenses.length / itemsPerPage);
+    const paginatedExpenses = expenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+    
+    const handleItemsPerPageChange = (value: string) => {
+        setItemsPerPage(Number(value));
+        setCurrentPage(1); // Reset to first page
+    };
+    
+    return (
+        <>
+            <ScrollArea className="h-96">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Pago S/N</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Pago por</TableHead>
+                            <TableHead>Rateio</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {paginatedExpenses.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center h-24">
+                            Nenhuma despesa encontrada para esta seleção.
+                            </TableCell>
+                        </TableRow>
+                        ) : (
+                        paginatedExpenses.map((expense) => (
+                            <TableRow key={expense.id}>
+                            <TableCell>
+                                {expense.isPaid ? (
+                                <CheckCircle className="h-5 w-5 text-green-500" title="Pago"/>
+                                ) : (
+                                <XCircle className="h-5 w-5 text-red-500" title="Não Pago"/>
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                <div className="font-medium">{expense.description}</div>
+                                <div className="text-sm text-muted-foreground flex flex-wrap gap-1 items-center">
+                                <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} -</span>
+                                <Badge variant="outline">{expense.category}</Badge>
+                                <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
+                                    {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
+                                </Badge>
+                                </div>
+                            </TableCell>
+                            <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                            <TableCell>
+                                <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
+                                    {expense.paidBy}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>
+                                <Badge variant="outline">{expense.split}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right whitespace-nowrap">
+                                <Button variant="ghost" size="icon" onClick={() => onEditPayment(expense)}>
+                                    <CircleDollarSign className="h-4 w-4" />
+                                </Button>
+                                <Link href={`/expenses/${expense.id}`}>
+                                <Button variant="ghost" size="icon" asChild>
+                                    <span><Pencil className="h-4 w-4" /></span>
+                                </Button>
+                                </Link>
+                                <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Essa ação não pode ser desfeita. Isso irá deletar permanentemente a despesa
+                                        "{expense.description}".
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => onDelete(expense.id)}>Deletar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                                </AlertDialog>
+                            </TableCell>
+                            </TableRow>
+                        ))
+                        )}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Itens por pág:</span>
+                <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                    <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    Próximo
+                </Button>
+                </div>
+            </div>
+        </>
+    )
+}
+
 export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseListProps) {
   const [editingPayment, setEditingPayment] = useState<Expense | null>(null);
   const [paidByFilter, setPaidByFilter] = useState<User | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'pontual' | 'recorrente'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -77,17 +216,12 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
       });
   }, [expenses, paidByFilter, typeFilter, statusFilter]);
 
-  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
-  const paginatedExpenses = filteredExpenses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-  
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page
-  };
+  const getExpensesBySplit = (split: SplitType | 'all') => {
+    if (split === 'all') {
+        return filteredExpenses.filter(e => e.split === '50/50');
+    }
+    return filteredExpenses.filter(e => e.split === split);
+  }
 
   return (
     <>
@@ -95,7 +229,7 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
         <CardHeader>
           <CardTitle>Lista de Despesas</CardTitle>
           <CardDescription>
-            {isLoading ? 'Carregando despesas...' : `Exibindo ${paginatedExpenses.length} de ${filteredExpenses.length} despesas.`}
+            {isLoading ? 'Carregando despesas...' : `Encontrado ${expenses.length} despesas no mês.`}
           </CardDescription>
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <Select value={paidByFilter} onValueChange={(value: User | 'all') => setPaidByFilter(value)}>
@@ -125,131 +259,23 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
           </div>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-96">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pago S/N</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Pago por</TableHead>
-                  <TableHead>Rateio</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center h-24">
-                        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                      </TableCell>
-                    </TableRow>
-                  ) : paginatedExpenses.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center h-24">
-                      Nenhuma despesa encontrada para este mês ou filtro.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedExpenses.map((expense) => (
-                    <TableRow key={expense.id}>
-                       <TableCell>
-                        {expense.isPaid ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" title="Pago"/>
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-500" title="Não Pago"/>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{expense.description}</div>
-                        <div className="text-sm text-muted-foreground flex flex-wrap gap-1 items-center">
-                          <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })} -</span>
-                          <Badge variant="outline">{expense.category}</Badge>
-                          <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
-                            {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                      <TableCell>
-                        <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
-                            {expense.paidBy}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                          <Badge variant="outline">{expense.split}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                         <Button variant="ghost" size="icon" onClick={() => setEditingPayment(expense)}>
-                            <CircleDollarSign className="h-4 w-4" />
-                         </Button>
-                         <Link href={`/expenses/${expense.id}`}>
-                           <Button variant="ghost" size="icon" asChild>
-                             <span><Pencil className="h-4 w-4" /></span>
-                           </Button>
-                         </Link>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso irá deletar permanentemente a despesa
-                                "{expense.description}".
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => onDelete(expense.id)}>Deletar</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+            <Tabs defaultValue="geral">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="geral">Geral (50/50)</TabsTrigger>
+                    <TabsTrigger value="adicionais-tati">Adicionais Tati</TabsTrigger>
+                    <TabsTrigger value="adicionais-fabao">Adicionais Fabão</TabsTrigger>
+                </TabsList>
+                <TabsContent value="geral" className="mt-4">
+                     <ExpenseTable expenses={getExpensesBySplit('50/50')} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                </TabsContent>
+                <TabsContent value="adicionais-tati" className="mt-4">
+                    <ExpenseTable expenses={getExpensesBySplit('100% Tati')} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                </TabsContent>
+                <TabsContent value="adicionais-fabao" className="mt-4">
+                    <ExpenseTable expenses={getExpensesBySplit('100% Fabão')} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                </TabsContent>
+            </Tabs>
         </CardContent>
-         <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Itens por pág:</span>
-              <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Próximo
-              </Button>
-            </div>
-        </CardFooter>
       </Card>
       {editingPayment && (
         <EditPaymentDialog
