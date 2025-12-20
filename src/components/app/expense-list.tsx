@@ -219,7 +219,7 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
   }, [filteredExpenses]);
 
   const tatiExpenses = useMemo(() => {
-    return filteredExpenses.filter(e => e.split === '100% Tati' && e.tipoDespesa === 'pontual');
+    return filteredExpenses.filter(e => e.paidBy === 'Tati' && e.tipoDespesa === 'pontual');
   }, [filteredExpenses]);
 
   const fabaoExpenses = useMemo(() => {
