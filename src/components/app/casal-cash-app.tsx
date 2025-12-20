@@ -7,10 +7,11 @@ import Dashboard from '@/components/app/dashboard';
 import ExpenseList from '@/components/app/expense-list';
 import LoanList from '@/components/app/loan-list';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
+import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import ApplyRecurringExpensesDialog from '@/components/app/apply-recurring-expenses-dialog';
 import DeleteMonthDialog from '@/components/app/delete-month-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { startOfMonth, endOfMonth, isWithinInterval, addMonths, setDate } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, addMonths, setDate, parse } from 'date-fns';
 import {
   useFirestore,
   useUser,
@@ -30,6 +31,7 @@ export default function CasalCashApp() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
+  const [isAddExpenseDialogOpen, setIsAddExpenseDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [isApplyRecurringDialogOpen, setIsApplyRecurringDialogOpen] = useState(false);
   const [isDeleteMonthDialogOpen, setIsDeleteMonthDialogOpen] = useState(false);
@@ -58,6 +60,22 @@ export default function CasalCashApp() {
   const { data: expenses, isLoading: isLoadingExpenses, forceRefetch: refetchExpenses } = useCollection<Expense>(expensesCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
   const { data: recurringExpenses, isLoading: isLoadingRecurringExpenses } = useCollection<RecurringExpense>(recurringExpensesCollection);
+
+  const addExpense = (expenseData: Omit<Expense, 'id' | 'date'> & { date: string }) => {
+    if (!expensesCollection || !user?.uid) return;
+
+    const parsedDate = parse(expenseData.date, 'dd/MM/yyyy', new Date());
+
+    const newExpense = {
+      ...expenseData,
+      date: Timestamp.fromDate(parsedDate),
+      tipoDespesa: 'pontual' as const,
+      members: { [user.uid]: 'owner' }
+    };
+    
+    addDocumentNonBlocking(expensesCollection, newExpense);
+    toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
+  };
 
   const deleteExpense = (id: string) => {
     if (!firestore) return;
@@ -249,6 +267,7 @@ export default function CasalCashApp() {
       <AppHeader
         currentUser={currentUser}
         onUserChange={setCurrentUser}
+        onAddExpense={() => setIsAddExpenseDialogOpen(true)}
         onAddLoan={() => setIsLoanDialogOpen(true)}
         onApplyRecurring={() => setIsApplyRecurringDialogOpen(true)}
         onDeleteCurrentMonth={() => setIsDeleteMonthDialogOpen(true)}
@@ -271,7 +290,12 @@ export default function CasalCashApp() {
           <LoanList loans={loansWithDateObjects} onPayInstallment={payInstallment} onDelete={deleteLoan} isLoading={isLoadingLoans} />
         </div>
       </div>
-
+      
+      <AddExpenseDialog
+        isOpen={isAddExpenseDialogOpen}
+        onOpenChange={setIsAddExpenseDialogOpen}
+        onAdd={addExpense}
+      />
       <AddLoanDialog
         isOpen={isLoanDialogOpen}
         onOpenChange={setIsLoanDialogOpen}
