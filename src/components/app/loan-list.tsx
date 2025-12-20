@@ -34,17 +34,28 @@ interface LoanListProps {
 
 export default function LoanList({ loans, onPayInstallment, onDelete, isLoading }: LoanListProps) {
   const [borrowerFilter, setBorrowerFilter] = useState<User | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paidOff'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
   const filteredLoans = useMemo(() => {
-    return loans.filter(loan => borrowerFilter === 'all' || loan.borrower === borrowerFilter);
-  }, [loans, borrowerFilter]);
+    return loans
+      .filter(loan => borrowerFilter === 'all' || loan.borrower === borrowerFilter)
+      .filter(loan => {
+        if (statusFilter === 'all') return true;
+        const isPaidOff = loan.paidInstallments >= loan.installments;
+        return statusFilter === 'paidOff' ? isPaidOff : !isPaidOff;
+      });
+  }, [loans, borrowerFilter, statusFilter]);
 
   const totalPages = Math.ceil(filteredLoans.length / itemsPerPage);
   const paginatedLoans = useMemo(() => {
+    // Reset to page 1 if filters change and current page becomes invalid
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
     return filteredLoans.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  }, [filteredLoans, currentPage, itemsPerPage]);
+  }, [filteredLoans, currentPage, itemsPerPage, totalPages]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -62,7 +73,7 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
         <CardTitle>Empréstimos e Parcelas</CardTitle>
         <CardDescription>Controle de empréstimos e compras parceladas.</CardDescription>
          <div className="flex flex-col sm:flex-row gap-2 pt-4">
-            <Select value={borrowerFilter} onValueChange={(value: User | 'all') => setBorrowerFilter(value)}>
+            <Select value={borrowerFilter} onValueChange={(value: User | 'all') => { setBorrowerFilter(value); setCurrentPage(1); }}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filtrar por devedor..." />
               </SelectTrigger>
@@ -70,6 +81,16 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
                 <SelectItem value="all">Todos Devedores</SelectItem>
                 <SelectItem value="Fabão">Fabão Deve</SelectItem>
                 <SelectItem value="Tati">Tati Deve</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={(value: 'all' | 'active' | 'paidOff') => { setStatusFilter(value); setCurrentPage(1); }}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrar por status..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="paidOff">Quitados</SelectItem>
               </SelectContent>
             </Select>
           </div>
