@@ -12,7 +12,7 @@ interface FirebaseProviderProps {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
-  analytics?: Analytics;
+  analytics?: Analytics | null;
 }
 
 // Internal state for user authentication
