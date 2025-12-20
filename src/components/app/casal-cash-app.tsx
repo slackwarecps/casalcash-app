@@ -6,7 +6,6 @@ import AppHeader from '@/components/app/header';
 import Dashboard from '@/components/app/dashboard';
 import ExpenseList from '@/components/app/expense-list';
 import LoanList from '@/components/app/loan-list';
-import AddExpenseDialog from '@/components/app/add-expense-dialog';
 import AddLoanDialog from '@/components/app/add-loan-dialog';
 import ApplyRecurringExpensesDialog from '@/components/app/apply-recurring-expenses-dialog';
 import DeleteMonthDialog from '@/components/app/delete-month-dialog';
@@ -31,7 +30,6 @@ export default function CasalCashApp() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [preCreditBalance, setPreCreditBalance] = useState(2330.00);
 
-  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [isApplyRecurringDialogOpen, setIsApplyRecurringDialogOpen] = useState(false);
   const [isDeleteMonthDialogOpen, setIsDeleteMonthDialogOpen] = useState(false);
@@ -60,18 +58,6 @@ export default function CasalCashApp() {
   const { data: expenses, isLoading: isLoadingExpenses, forceRefetch: refetchExpenses } = useCollection<Expense>(expensesCollection);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansCollection);
   const { data: recurringExpenses, isLoading: isLoadingRecurringExpenses } = useCollection<RecurringExpense>(recurringExpensesCollection);
-
-  const addExpense = (expense: Omit<Expense, 'id' | 'tipoDespesa'>) => {
-    if (!expensesCollection || !user?.uid) return;
-    const newExpense = {
-      ...expense,
-      tipoDespesa: 'pontual' as const,
-      date: Timestamp.fromDate(expense.date as Date),
-      members: { [user.uid]: 'owner' }
-    };
-    addDocumentNonBlocking(expensesCollection, newExpense);
-    toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
-  };
 
   const deleteExpense = (id: string) => {
     if (!firestore) return;
@@ -263,7 +249,6 @@ export default function CasalCashApp() {
       <AppHeader
         currentUser={currentUser}
         onUserChange={setCurrentUser}
-        onAddExpense={() => setIsExpenseDialogOpen(true)}
         onAddLoan={() => setIsLoanDialogOpen(true)}
         onApplyRecurring={() => setIsApplyRecurringDialogOpen(true)}
         onDeleteCurrentMonth={() => setIsDeleteMonthDialogOpen(true)}
@@ -287,11 +272,6 @@ export default function CasalCashApp() {
         </div>
       </div>
 
-      <AddExpenseDialog
-        isOpen={isExpenseDialogOpen}
-        onOpenChange={setIsExpenseDialogOpen}
-        onAddExpense={addExpense}
-      />
       <AddLoanDialog
         isOpen={isLoanDialogOpen}
         onOpenChange={setIsLoanDialogOpen}

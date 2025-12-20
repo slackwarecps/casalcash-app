@@ -1,28 +1,29 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import type { Expense } from '@/lib/types';
+import { categories } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { categories, Category, Expense, SplitType, User } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-interface AddExpenseDialogProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onAddExpense: (expense: Omit<Expense, 'id' | 'tipoDespesa'>) => void;
-}
+const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Descrição deve ter pelo menos 2 caracteres.' }),
@@ -35,7 +36,12 @@ const formSchema = z.object({
   }),
 });
 
-export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }: AddExpenseDialogProps) {
+export default function AddExpensePage() {
+  const router = useRouter();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,40 +54,50 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const newExpenseData = {
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!firestore || !user?.uid) return;
+    const expensesCollection = collection(firestore, 'couples', COUPLE_ID, 'expenses');
+    
+    const newExpense = {
       ...values,
-      isPaid: false,
-      paymentDetails: '',
+      date: Timestamp.fromDate(values.date),
+      tipoDespesa: 'pontual' as const,
+      members: { [user.uid]: 'owner' }
     };
-    onAddExpense(newExpenseData);
-    form.reset();
-    onOpenChange(false);
-  }
-  
+
+    addDocumentNonBlocking(expensesCollection, newExpense);
+    toast({ title: "Despesa adicionada!", description: `"${newExpense.description}" foi registrada.` });
+    router.push('/');
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Adicionar Despesa</DialogTitle>
-          <DialogDescription>Registre um novo gasto do casal.</DialogDescription>
-        </DialogHeader>
+    <main className="container mx-auto p-4 md:p-8">
+       <Button variant="outline" onClick={() => router.push('/')} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Voltar para Home
+      </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-3xl">Adicionar Despesa</CardTitle>
+          <CardDescription>Registre um novo gasto do casal.</CardDescription>
+        </CardHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Jantar no restaurante" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Jantar no restaurante" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <div className="grid grid-cols-2 gap-4">
                  <FormField
                   control={form.control}
                   name="amount"
@@ -120,10 +136,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent 
-                          className="w-auto p-0" 
-                          align="start"
-                        >
+                        <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
                             selected={field.value}
@@ -148,7 +161,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pago por</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />
@@ -169,7 +182,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                         </FormControl>
@@ -191,7 +204,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="flex flex-col space-y-1"
                     >
                       <FormItem className="flex items-center space-x-3 space-y-0">
@@ -212,12 +225,16 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="submit">Adicionar Despesa</Button>
-            </DialogFooter>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Despesa
+              </Button>
+            </CardFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </Card>
+    </main>
   );
 }

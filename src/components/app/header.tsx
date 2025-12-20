@@ -14,7 +14,6 @@ import Link from 'next/link';
 interface AppHeaderProps {
   currentUser: User;
   onUserChange: (user: User) => void;
-  onAddExpense: () => void;
   onAddLoan: () => void;
   onApplyRecurring: () => void;
   onDeleteCurrentMonth: () => void;
@@ -25,7 +24,6 @@ interface AppHeaderProps {
 export default function AppHeader({
   currentUser,
   onUserChange,
-  onAddExpense,
   onAddLoan,
   onApplyRecurring,
   onDeleteCurrentMonth,
@@ -70,10 +68,12 @@ export default function AppHeader({
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button onClick={onAddExpense}>
-          <PlusCircle />
-          Gasto
-        </Button>
+        <Link href="/expenses/new">
+          <Button>
+            <PlusCircle />
+            Gasto
+          </Button>
+        </Link>
         <Button onClick={onAddLoan} variant="secondary">
           <PlusCircle />
           Empréstimo
