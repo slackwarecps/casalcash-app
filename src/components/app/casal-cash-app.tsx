@@ -126,6 +126,8 @@ export default function CasalCashApp() {
       ...expenseData,
       date: Timestamp.fromDate(parsedDate),
       tipoDespesa: 'pontual' as const,
+      isPaid: true,
+      paymentDetails: '',
       members: { [user.uid]: 'owner' }
     };
     
