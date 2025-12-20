@@ -230,6 +230,10 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
     return filteredExpenses.filter(e => e.tipoDespesa === 'recorrente');
   }, [filteredExpenses]);
 
+  const fabaoTotal = useMemo(() => {
+    return fabaoExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [fabaoExpenses]);
+
 
   return (
     <>
@@ -274,6 +278,12 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                 </TabsContent>
                 <TabsContent value="adicionais-fabao" className="mt-4">
                     <ExpenseTable expenses={fabaoExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                    <CardFooter className="pt-6 justify-end">
+                        <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Total Variáveis Fabão</p>
+                        <p className="text-lg font-bold">{formatCurrency(fabaoTotal)}</p>
+                        </div>
+                    </CardFooter>
                 </TabsContent>
                 <TabsContent value="fixas" className="mt-4">
                     <ExpenseTable expenses={fixedExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
