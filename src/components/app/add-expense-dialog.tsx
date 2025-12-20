@@ -36,7 +36,6 @@ const formSchema = z.object({
 });
 
 export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }: AddExpenseDialogProps) {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,13 +58,6 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
     form.reset();
     onOpenChange(false);
   }
-
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      form.setValue('date', date);
-      setIsCalendarOpen(false); // Fecha o calendário após a seleção
-    }
-  };
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -109,7 +101,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Data</FormLabel>
-                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                      <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -135,7 +127,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={handleDateSelect}
+                            onSelect={field.onChange}
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }
