@@ -223,7 +223,7 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
   }, [filteredExpenses]);
 
   const fabaoExpenses = useMemo(() => {
-    return filteredExpenses.filter(e => e.paidBy === 'Fabão');
+    return filteredExpenses.filter(e => e.paidBy === 'Fabão' && e.tipoDespesa === 'pontual');
   }, [filteredExpenses]);
   
   const fixedExpenses = useMemo(() => {
