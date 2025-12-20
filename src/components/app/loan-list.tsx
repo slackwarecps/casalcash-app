@@ -34,7 +34,7 @@ interface LoanListProps {
 
 export default function LoanList({ loans, onPayInstallment, onDelete, isLoading }: LoanListProps) {
   const [borrowerFilter, setBorrowerFilter] = useState<User | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paidOff'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paidOff'>('active');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
