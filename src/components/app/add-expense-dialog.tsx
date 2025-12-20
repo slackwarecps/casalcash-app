@@ -101,7 +101,7 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Data</FormLabel>
-                      <Popover>
+                      <Popover modal={true}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -123,7 +123,6 @@ export default function AddExpenseDialog({ isOpen, onOpenChange, onAddExpense }:
                         <PopoverContent 
                           className="w-auto p-0" 
                           align="start"
-                          onPointerDownOutside={(e) => e.preventDefault()}
                         >
                           <Calendar
                             mode="single"
