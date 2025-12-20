@@ -7,9 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HandCoins, Loader2, Trash2, ChevronRight } from 'lucide-react';
+import { HandCoins, Loader2, Trash2, ChevronRight, CalendarClock, CheckCircle, Hourglass } from 'lucide-react';
 import type { Loan, User } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Badge } from '../ui/badge';
 
 interface LoanListProps {
   loans: Loan[];
@@ -98,6 +101,8 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
                   const installmentValue = loan.totalAmount / loan.installments;
                   const progress = (loan.paidInstallments / loan.installments) * 100;
                   const isPaidOff = loan.paidInstallments >= loan.installments;
+                  const firstInstallmentDate = loan.installmentDetails?.[0]?.dueDate;
+                  const lastInstallmentDate = loan.installmentDetails?.[loan.installments - 1]?.dueDate;
 
                   return (
                     <TableRow key={loan.id}>
@@ -106,9 +111,21 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
                         <div className="text-sm text-muted-foreground">
                           {loan.borrower} deve a {loan.lender}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground font-semibold">
                           {formatCurrency(installmentValue)} / mês
                         </div>
+                        {firstInstallmentDate && lastInstallmentDate && (
+                           <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <CalendarClock className="h-3 w-3" />
+                                <span>
+                                    {format(firstInstallmentDate, 'dd/MM/yy', { locale: ptBR })} - {format(lastInstallmentDate, 'dd/MM/yy', { locale: ptBR })}
+                                </span>
+                           </div>
+                        )}
+                         <Badge variant={isPaidOff ? 'secondary' : 'outline'} className={cn('mt-2', isPaidOff ? 'border-green-600' : '')}>
+                           {isPaidOff ? <CheckCircle className="h-3 w-3 mr-1 text-green-600"/> : <Hourglass className="h-3 w-3 mr-1"/>}
+                           {isPaidOff ? 'Quitado' : 'Ativo'}
+                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-2">
