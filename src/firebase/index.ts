@@ -1,8 +1,9 @@
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, signOut, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAnalytics, Analytics } from 'firebase/analytics';
 
 // Using the configuration provided by the user.
 const firebaseConfig = {
@@ -31,10 +32,15 @@ export function initializeFirebase() {
 
 export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
+  let analytics;
+  if (typeof window !== 'undefined') {
+    analytics = getAnalytics(firebaseApp);
+  }
   return {
     firebaseApp,
     auth,
     firestore: getFirestore(firebaseApp),
+    analytics,
     signOut: () => signOut(auth),
   };
 }
