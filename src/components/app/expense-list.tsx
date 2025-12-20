@@ -234,6 +234,10 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
     return fabaoExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [fabaoExpenses]);
 
+  const tatiTotal = useMemo(() => {
+    return tatiExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [tatiExpenses]);
+
 
   return (
     <>
@@ -275,6 +279,12 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                 </TabsContent>
                 <TabsContent value="adicionais-tati" className="mt-4">
                     <ExpenseTable expenses={tatiExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                    <CardFooter className="pt-6 justify-end">
+                        <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Total Variáveis Tati</p>
+                        <p className="text-lg font-bold">{formatCurrency(tatiTotal)}</p>
+                        </div>
+                    </CardFooter>
                 </TabsContent>
                 <TabsContent value="adicionais-fabao" className="mt-4">
                     <ExpenseTable expenses={fabaoExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
