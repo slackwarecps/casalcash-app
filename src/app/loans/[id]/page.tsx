@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import type { Loan } from '@/lib/types';
+import type { Loan, Installment } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,13 +13,15 @@ import { ptBR } from 'date-fns/locale';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
-import { doc, Timestamp } from 'firebase/firestore';
+import { doc, Timestamp, collection } from 'firebase/firestore';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AddInstallmentPaymentDetailsDialog from '@/components/app/add-installment-payment-details-dialog';
+
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -50,7 +52,8 @@ export default function LoanDetailPage() {
   }, [firestore, id]);
 
   const { data: loanData, isLoading } = useDoc<Loan>(loanDocRef);
-  const [localInstallments, setLocalInstallments] = useState(loanData?.installmentDetails || []);
+  const [localInstallments, setLocalInstallments] = useState<Installment[]>([]);
+  const [editingPaymentFor, setEditingPaymentFor] = useState<Installment | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -75,16 +78,34 @@ export default function LoanDetailPage() {
     }
   }, [loanData, form]);
 
-  const handleStatusChange = (installmentId: string, isPaid: boolean) => {
-    setLocalInstallments(prev =>
+  const handleStatusChange = (installment: Installment, isPaid: boolean) => {
+    if (isPaid) {
+      // If marking as paid, open the dialog to add details
+      setEditingPaymentFor(installment);
+    } else {
+      // If un-marking, just update the state directly
+      setLocalInstallments(prev =>
+        prev.map(inst => {
+          if (inst.id === installment.id) {
+            return { ...inst, isPaid: false, paidDate: null, paymentDetails: '' };
+          }
+          return inst;
+        })
+      );
+    }
+  };
+  
+  const handleSavePaymentDetails = (installmentId: string, details: string) => {
+     setLocalInstallments(prev =>
       prev.map(inst => {
         if (inst.id === installmentId) {
-          return { ...inst, isPaid: isPaid, paidDate: isPaid ? new Date() : null };
+          return { ...inst, isPaid: true, paidDate: new Date(), paymentDetails: details };
         }
         return inst;
       })
     );
-  };
+    setEditingPaymentFor(null); // Close the dialog
+  }
 
   const handleSaveChanges = (values: z.infer<typeof formSchema>) => {
     if (!loanData || !loanDocRef) return;
@@ -107,6 +128,7 @@ export default function LoanDetailPage() {
                 dueDate: addMonths(parsedDate, i),
                 isPaid: existingInstallment?.isPaid || false,
                 paidDate: existingInstallment?.paidDate || null,
+                paymentDetails: existingInstallment?.paymentDetails || '',
             };
         });
     }
@@ -139,167 +161,177 @@ export default function LoanDetailPage() {
   const totalPaidInstallments = localInstallments.filter(i => i.isPaid).length;
 
   return (
-    <main className="container mx-auto p-4 md:p-8">
-      <Button variant="outline" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar
-      </Button>
-      <Card>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSaveChanges)}>
-            <CardHeader>
-              <CardTitle className="text-3xl">Editar Empréstimo</CardTitle>
-              <CardDescription>
-                Altere os detalhes do empréstimo e o status das parcelas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Ex: Notebook novo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                    control={form.control}
-                    name="totalAmount"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Valor Total</FormLabel>
-                        <FormControl>
-                            <Input type="number" step="0.01" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="installments"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Nº de Parcelas</FormLabel>
-                        <FormControl>
-                            <Input type="number" step="1" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Data de Início</FormLabel>
-                    <FormControl>
-                        <Input placeholder="dd/mm/yyyy" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="lender"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Quem emprestou/pagou</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            <SelectItem value="Fabão">Fabão</SelectItem>
-                            <SelectItem value="Tati">Tati</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="borrower"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Quem deve</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            <SelectItem value="Fabão">Fabão</SelectItem>
-                            <SelectItem value="Tati">Tati</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                </div>
-            
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Parcelas</h3>
-                <div className="flex flex-col gap-2 mb-6">
-                    <Progress value={progress} className="w-full h-3" />
-                    <span className="text-sm text-muted-foreground">
-                        {totalPaidInstallments} de {form.getValues('installments')} parcelas pagas ({formatCurrency(form.getValues('totalAmount'))})
-                    </span>
-                </div>
+    <>
+      <main className="container mx-auto p-4 md:p-8">
+        <Button variant="outline" onClick={() => router.back()} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
+        <Card>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSaveChanges)}>
+              <CardHeader>
+                <CardTitle className="text-3xl">Editar Empréstimo</CardTitle>
+                <CardDescription>
+                  Altere os detalhes do empréstimo e o status das parcelas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                  <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Descrição</FormLabel>
+                      <FormControl>
+                          <Input placeholder="Ex: Notebook novo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                      control={form.control}
+                      name="totalAmount"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Valor Total</FormLabel>
+                          <FormControl>
+                              <Input type="number" step="0.01" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                      <FormField
+                      control={form.control}
+                      name="installments"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Nº de Parcelas</FormLabel>
+                          <FormControl>
+                              <Input type="number" step="1" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                      />
+                  </div>
+                  <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Data de Início</FormLabel>
+                      <FormControl>
+                          <Input placeholder="dd/mm/yyyy" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                      control={form.control}
+                      name="lender"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Quem emprestou/pagou</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              <SelectItem value="Fabão">Fabão</SelectItem>
+                              <SelectItem value="Tati">Tati</SelectItem>
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="borrower"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Quem deve</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              <SelectItem value="Fabão">Fabão</SelectItem>
+                              <SelectItem value="Tati">Tati</SelectItem>
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  </div>
+              
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Parcelas</h3>
+                  <div className="flex flex-col gap-2 mb-6">
+                      <Progress value={progress} className="w-full h-3" />
+                      <span className="text-sm text-muted-foreground">
+                          {totalPaidInstallments} de {form.getValues('installments')} parcelas pagas ({formatCurrency(form.getValues('totalAmount'))})
+                      </span>
+                  </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Paga?</TableHead>
-                      <TableHead>Nº da Parcela</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Data de Vencimento</TableHead>
-                      <TableHead>Data de Pagamento</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {localInstallments.map((installment) => (
-                      <TableRow key={installment.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={installment.isPaid}
-                            onCheckedChange={(checked) => handleStatusChange(installment.id, !!checked)}
-                          />
-                        </TableCell>
-                        <TableCell>{installment.installmentNumber}</TableCell>
-                        <TableCell>{formatCurrency(installment.amount)}</TableCell>
-                        <TableCell>{format(installment.dueDate as Date, "dd/MM/yyyy", { locale: ptBR })}</TableCell>
-                        <TableCell>
-                          {installment.paidDate ? format(installment.paidDate as Date, "dd/MM/yyyy", { locale: ptBR }) : 'Pendente'}
-                        </TableCell>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Paga?</TableHead>
+                        <TableHead>Nº</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead>Pagamento</TableHead>
+                        <TableHead>Detalhes</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                <Button type="submit">
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar Alterações
-                </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </Card>
-    </main>
+                    </TableHeader>
+                    <TableBody>
+                      {localInstallments.map((installment) => (
+                        <TableRow key={installment.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={installment.isPaid}
+                              onCheckedChange={(checked) => handleStatusChange(installment, !!checked)}
+                            />
+                          </TableCell>
+                          <TableCell>{installment.installmentNumber}</TableCell>
+                          <TableCell>{formatCurrency(installment.amount)}</TableCell>
+                          <TableCell>{format(installment.dueDate as Date, "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                          <TableCell>
+                            {installment.paidDate ? format(installment.paidDate as Date, "dd/MM/yyyy", { locale: ptBR }) : 'Pendente'}
+                          </TableCell>
+                           <TableCell className="text-sm text-muted-foreground">{installment.paymentDetails || '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                  <Button type="submit">
+                      {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Salvar Alterações
+                  </Button>
+              </CardFooter>
+            </form>
+          </Form>
+        </Card>
+      </main>
+      {editingPaymentFor && (
+        <AddInstallmentPaymentDetailsDialog
+            installment={editingPaymentFor}
+            isOpen={!!editingPaymentFor}
+            onOpenChange={() => setEditingPaymentFor(null)}
+            onSave={handleSavePaymentDetails}
+        />
+      )}
+    </>
   );
 }
-
-    

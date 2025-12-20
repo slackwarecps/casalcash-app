@@ -43,6 +43,7 @@ export interface Installment {
   dueDate: Date | Timestamp;
   paidDate?: Date | Timestamp | null;
   isPaid: boolean;
+  paymentDetails?: string;
 }
 
 export interface Loan extends FirestoreDoc {
