@@ -216,12 +216,18 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
       });
   }, [expenses, paidByFilter, typeFilter, statusFilter]);
 
-  const getExpensesBySplit = (split: SplitType | 'all') => {
-    if (split === 'all') {
-        return filteredExpenses.filter(e => e.split === '50/50');
-    }
-    return filteredExpenses.filter(e => e.split === split);
-  }
+  const geralExpenses = useMemo(() => {
+    return filteredExpenses.filter(e => e.split === '50/50');
+  }, [filteredExpenses]);
+
+  const tatiExpenses = useMemo(() => {
+    return filteredExpenses.filter(e => e.split === '100% Tati');
+  }, [filteredExpenses]);
+
+  const fabaoExpenses = useMemo(() => {
+    return filteredExpenses.filter(e => e.split === '100% Fabão');
+  }, [filteredExpenses]);
+
 
   return (
     <>
@@ -266,13 +272,13 @@ export default function ExpenseList({ expenses, onDelete, isLoading }: ExpenseLi
                     <TabsTrigger value="adicionais-fabao">Adicionais Fabão</TabsTrigger>
                 </TabsList>
                 <TabsContent value="geral" className="mt-4">
-                     <ExpenseTable expenses={getExpensesBySplit('50/50')} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                     <ExpenseTable expenses={geralExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
                 </TabsContent>
                 <TabsContent value="adicionais-tati" className="mt-4">
-                    <ExpenseTable expenses={getExpensesBySplit('100% Tati')} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                    <ExpenseTable expenses={tatiExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
                 </TabsContent>
                 <TabsContent value="adicionais-fabao" className="mt-4">
-                    <ExpenseTable expenses={getExpensesBySplit('100% Fabão')} onDelete={onDelete} onEditPayment={setEditingPayment} />
+                    <ExpenseTable expenses={fabaoExpenses} onDelete={onDelete} onEditPayment={setEditingPayment} />
                 </TabsContent>
             </Tabs>
         </CardContent>
