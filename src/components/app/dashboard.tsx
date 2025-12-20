@@ -174,93 +174,127 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl capitalize">Resumo de {monthName}</CardTitle>
-        <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-2 gap-4 items-start">
-        <div className="grid grid-cols-2 md:grid-cols-4 col-span-1 md:col-span-3 lg:col-span-1 gap-4">
-             <Card className="bg-background/70 col-span-2">
+    <div className="flex flex-col gap-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl capitalize">Resumo de {monthName}</CardTitle>
+          <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+                  </CardContent>
+              </Card>
+              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Divisão por Dois</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">{formatCurrency(totalExpenses / 2)}</div>
+                  </CardContent>
+              </Card>
+              <Card className="bg-background/70">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Fabão Pagou</CardTitle>
+                    <User className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(fabaoPaid)}</div>
                 </CardContent>
-            </Card>
-             <Card className="bg-background/70 col-span-2">
+              </Card>
+              <Card className="bg-background/70">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Divisão por Dois</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Tati Pagou</CardTitle>
+                    <User className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(totalExpenses / 2)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(tatiPaid)}</div>
                 </CardContent>
-            </Card>
-            
-            <Card className="bg-background/70">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Fabão Pagou</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(fabaoPaid)}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-background/70">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Tati Pagou</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(tatiPaid)}</div>
-            </CardContent>
-            </Card>
-            
-            <Card className="bg-background/70">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pré-créditos Fabão</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(fabaoPreCredits)}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-background/70">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pré-créditos Tati</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(tatiPreCredits)}</div>
-            </CardContent>
-            </Card>
+              </Card>
+              <Card className="bg-background/70">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pré-créditos Fabão</CardTitle>
+                    <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(fabaoPreCredits)}</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-background/70">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pré-créditos Tati</CardTitle>
+                    <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(tatiPreCredits)}</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Empréstimos Ativos</CardTitle>
+                    <FileStack className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{totalActiveLoans}</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Falta Pagar (Emp.)</CardTitle>
+                    <HandCoins className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
+                </CardContent>
+              </Card>
+          </div>
+        </CardContent>
+        <CardFooter className="flex-col items-start gap-4">
+          { (aiResult || aiError) ? (
+            <div className="w-full mt-4 animate-in fade-in-50 duration-500">
+                {aiResult && (
+                    <Alert className="border-accent bg-accent/10">
+                        <Sparkles className="h-4 w-4 !text-accent" />
+                        <AlertTitle className="text-accent font-bold">Resumo da IA</AlertTitle>
+                        <AlertDescription className="text-foreground">
+                            {aiResult.summary.split('\n').map((line, i) => <p key={i}>{line}</p>)}
+                        </AlertDescription>
+                    </Alert>
+                )}
+                {aiError && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Erro</AlertTitle>
+                        <AlertDescription>{aiError}</AlertDescription>
+                    </Alert>
+                )}
+            </div>
+            ) : <p className="text-sm text-muted-foreground">Clique para usar a IA e descobrir o balanço final do mês, incluindo despesas, pré-créditos e parcelas de empréstimos.</p>
+          }
+          <Button onClick={handleReconciliation} disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            {isLoading ? 'Calculando...' : 'Reconciliar Dívidas com IA'}
+          </Button>
+        </CardFooter>
+      </Card>
 
-            <Card className="bg-background/70 col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Empréstimos Ativos</CardTitle>
-                <FileStack className="h-4 w-4 text-muted-foreground" />
+      {chartData.length > 0 && (
+          <Card>
+            <CardHeader>
+                <CardTitle>Gráficos de despesas</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{totalActiveLoans}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-background/70 col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Falta Pagar (Emp.)</CardTitle>
-                <HandCoins className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
-            </CardContent>
-            </Card>
-        </div>
-
-        {chartData.length > 0 && (
-            <div className="col-span-1 md:col-span-3 lg:col-span-1 min-h-[300px] flex flex-col justify-center">
-                 <ChartContainer config={chartConfig} className="w-full h-[350px]">
+            <CardContent className="min-h-[300px] flex flex-col justify-center">
+                <ChartContainer config={chartConfig} className="w-full h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Tooltip content={<ChartTooltipContent nameKey="value" formatter={(value, name) => `${formatCurrency(value as number)}`} />} />
@@ -293,44 +327,9 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartContainer>
-            </div>
-        )}
-        
-        {(aiResult || aiError) && (
-            <div className="md:col-span-3 lg:col-span-2 mt-4 animate-in fade-in-50 duration-500">
-                {aiResult && (
-                    <Alert className="border-accent bg-accent/10">
-                        <Sparkles className="h-4 w-4 !text-accent" />
-                        <AlertTitle className="text-accent font-bold">Resumo da IA</AlertTitle>
-                        <AlertDescription className="text-foreground">
-                            {aiResult.summary.split('\n').map((line, i) => <p key={i}>{line}</p>)}
-                        </AlertDescription>
-                    </Alert>
-                )}
-                {aiError && (
-                    <Alert variant="destructive">
-                        <AlertTitle>Erro</AlertTitle>
-                        <AlertDescription>{aiError}</AlertDescription>
-                    </Alert>
-                )}
-            </div>
-        )}
-
-      </CardContent>
-      <CardFooter className="flex-col items-start gap-4">
-        <p className="text-sm text-muted-foreground">
-          Clique para usar a IA e descobrir o balanço final do mês, incluindo despesas, pré-créditos e parcelas de empréstimos.
-        </p>
-        <Button onClick={handleReconciliation} disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <Sparkles className="mr-2 h-4 w-4" />
-          )}
-          {isLoading ? 'Calculando...' : 'Reconciliar Dívidas com IA'}
-        </Button>
-      </CardFooter>
-    </Card>
+            </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
-    
