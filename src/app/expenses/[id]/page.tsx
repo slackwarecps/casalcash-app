@@ -18,6 +18,8 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -31,6 +33,8 @@ const formSchema = z.object({
     message: "Data deve estar no formato dd/mm/yyyy",
   }),
   tipoDespesa: z.enum(['pontual', 'recorrente']),
+  isPaid: z.boolean().default(true),
+  paymentDetails: z.string().optional(),
 });
 
 export default function EditExpensePage() {
@@ -57,6 +61,8 @@ export default function EditExpensePage() {
         ...expenseData,
         date: (expenseData.date as Timestamp).toDate().toLocaleDateString('pt-BR'),
         tipoDespesa: expenseData.tipoDespesa || 'pontual',
+        isPaid: expenseData.isPaid || false,
+        paymentDetails: expenseData.paymentDetails || '',
       });
     }
   }, [expenseData, form]);
@@ -222,6 +228,41 @@ export default function EditExpensePage() {
                           <FormLabel className="font-normal">100% Tati</FormLabel>
                         </FormItem>
                       </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="isPaid"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Despesa Paga?</FormLabel>
+                      <FormMessage />
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="paymentDetails"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observação do Pagamento</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Ex: pago via Pix do Nubank"
+                        className="resize-none"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
