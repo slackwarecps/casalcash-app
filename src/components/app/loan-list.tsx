@@ -1,13 +1,14 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HandCoins, Loader2, Trash2, ChevronRight } from 'lucide-react';
-import type { Loan } from '@/lib/types';
+import type { Loan, User } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import {
   AlertDialog,
@@ -29,14 +30,48 @@ interface LoanListProps {
 }
 
 export default function LoanList({ loans, onPayInstallment, onDelete, isLoading }: LoanListProps) {
+  const [borrowerFilter, setBorrowerFilter] = useState<User | 'all'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  const filteredLoans = useMemo(() => {
+    return loans.filter(loan => borrowerFilter === 'all' || loan.borrower === borrowerFilter);
+  }, [loans, borrowerFilter]);
+
+  const totalPages = Math.ceil(filteredLoans.length / itemsPerPage);
+  const paginatedLoans = useMemo(() => {
+    return filteredLoans.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [filteredLoans, currentPage, itemsPerPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  
+  const handleItemsPerPageChange = (value: string) => {
+      setItemsPerPage(Number(value));
+      setCurrentPage(1); // Reset to first page
+  };
+
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Empréstimos e Parcelas</CardTitle>
         <CardDescription>Controle de empréstimos e compras parceladas.</CardDescription>
+         <div className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Select value={borrowerFilter} onValueChange={(value: User | 'all') => setBorrowerFilter(value)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filtrar por devedor..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Devedores</SelectItem>
+                <SelectItem value="Fabão">Fabão Deve</SelectItem>
+                <SelectItem value="Tati">Tati Deve</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[28.5rem]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -52,14 +87,14 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
                       <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                     </TableCell>
                   </TableRow>
-                ) : loans.length === 0 ? (
+                ) : paginatedLoans.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center h-24">
-                    Nenhum empréstimo registrado.
+                    Nenhum empréstimo encontrado para este filtro.
                   </TableCell>
                 </TableRow>
               ) : (
-                loans.map((loan) => {
+                paginatedLoans.map((loan) => {
                   const installmentValue = loan.totalAmount / loan.installments;
                   const progress = (loan.paidInstallments / loan.installments) * 100;
                   const isPaidOff = loan.paidInstallments >= loan.installments;
@@ -126,7 +161,40 @@ export default function LoanList({ loans, onPayInstallment, onDelete, isLoading 
               )}
             </TableBody>
           </Table>
-        </ScrollArea>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Itens por pág:</span>
+            <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                <SelectTrigger className="w-20 h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+            </Select>
+            </div>
+            <div className="flex items-center gap-2">
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isLoading}
+            >
+                Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+                Página {totalPages > 0 ? currentPage : 0} de {totalPages}
+            </span>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isLoading || totalPages === 0}
+            >
+                Próximo
+            </Button>
+            </div>
+        </div>
       </CardContent>
     </Card>
   );
