@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -13,15 +12,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { ArrowLeft, CalendarIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { parse } from 'date-fns';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -31,8 +26,8 @@ const formSchema = z.object({
   paidBy: z.enum(['Fabão', 'Tati']),
   split: z.enum(['50/50', '100% Fabão', '100% Tati']),
   category: z.enum(categories),
-  date: z.date({
-    required_error: "A data é obrigatória.",
+  date: z.string().refine(val => /^\d{2}\/\d{2}\/\d{4}$/.test(val), {
+    message: "Data deve estar no formato dd/mm/yyyy",
   }),
 });
 
@@ -50,7 +45,7 @@ export default function AddExpensePage() {
       paidBy: 'Fabão',
       split: '50/50',
       category: 'Outros',
-      date: new Date(),
+      date: new Date().toLocaleDateString('pt-BR'),
     },
   });
 
@@ -58,9 +53,11 @@ export default function AddExpensePage() {
     if (!firestore || !user?.uid) return;
     const expensesCollection = collection(firestore, 'couples', COUPLE_ID, 'expenses');
     
+    const parsedDate = parse(values.date, 'dd/MM/yyyy', new Date());
+
     const newExpense = {
       ...values,
-      date: Timestamp.fromDate(values.date),
+      date: Timestamp.fromDate(parsedDate),
       tipoDespesa: 'pontual' as const,
       members: { [user.uid]: 'owner' }
     };
@@ -115,40 +112,11 @@ export default function AddExpensePage() {
                   control={form.control}
                   name="date"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem>
                       <FormLabel>Data</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                <span>Escolha uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                            locale={ptBR}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <Input placeholder="dd/mm/yyyy" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
