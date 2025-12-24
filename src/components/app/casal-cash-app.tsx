@@ -25,6 +25,7 @@ import { collection, doc, Timestamp, writeBatch } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import AddPreCreditDialog from './add-pre-credit-dialog';
 import PreCreditList from './pre-credit-list';
+import SecureLS from 'secure-ls';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -39,10 +40,21 @@ export default function CasalCashApp() {
   const [isApplyRecurringDialogOpen, setIsApplyRecurringDialogOpen] = useState(false);
   const [isDeleteMonthDialogOpen, setIsDeleteMonthDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [familyId, setFamilyId] = useState<string | null>(null);
 
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ls = new SecureLS({ encodingType: 'aes' });
+      const storedFamilyId = ls.get('familyId');
+      if (storedFamilyId) {
+        setFamilyId(storedFamilyId);
+      }
+    }
+  }, []);
 
   // Firestore collections
   const expensesCollection = useMemoFirebase(() => {
@@ -92,6 +104,8 @@ export default function CasalCashApp() {
         amount: creditData.amount,
         author: creditData.author,
         date: Timestamp.fromDate(parsedDate),
+        creator: user.uid,
+        familyId: familyId,
         members: { [user.uid]: 'owner' }
       };
       addDocumentNonBlocking(preCreditsCollection, newCredit);
@@ -128,6 +142,8 @@ export default function CasalCashApp() {
       tipoDespesa: 'pontual' as const,
       isPaid: true,
       paymentDetails: '',
+      creator: user.uid,
+      familyId: familyId,
       members: { [user.uid]: 'owner' }
     };
     
@@ -166,6 +182,8 @@ export default function CasalCashApp() {
       paidInstallments: 0,
       installmentDetails,
       date: Timestamp.fromDate(loan.date as Date),
+      creator: user.uid,
+      familyId: familyId,
       members: { [user.uid]: 'owner' }
     };
 
@@ -226,6 +244,8 @@ export default function CasalCashApp() {
         category: recExpense.category,
         date: Timestamp.fromDate(expenseDate),
         tipoDespesa: 'recorrente',
+        creator: user.uid,
+        familyId: familyId,
         members: { [user.uid as string]: 'owner' }
       };
   

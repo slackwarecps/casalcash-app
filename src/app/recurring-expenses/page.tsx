@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -25,6 +25,7 @@ import { collection, doc } from 'firebase/firestore';
 import type { RecurringExpense } from '@/lib/types';
 import AddRecurringExpenseDialog from '@/components/app/add-recurring-expense-dialog';
 import { useToast } from '@/hooks/use-toast';
+import SecureLS from 'secure-ls';
 
 const COUPLE_ID = 'casalUnico';
 
@@ -34,6 +35,17 @@ export default function RecurringExpensesPage() {
   const { user } = useUser();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [familyId, setFamilyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ls = new SecureLS({ encodingType: 'aes' });
+      const storedFamilyId = ls.get('familyId');
+      if (storedFamilyId) {
+        setFamilyId(storedFamilyId);
+      }
+    }
+  }, []);
   
   const recurringExpensesCollection = useMemoFirebase(() => {
     if (!user) return null;
@@ -46,6 +58,8 @@ export default function RecurringExpensesPage() {
     if (!recurringExpensesCollection || !user?.uid) return;
     const newRecurringExpense = {
         ...expenseData,
+        creator: user.uid,
+        familyId: familyId,
         members: { [user.uid]: 'owner' }
     };
     addDocumentNonBlocking(recurringExpensesCollection, newRecurringExpense);
