@@ -74,7 +74,7 @@ export default function AppHeader({
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button onClick={onAddExpense}>
           <PlusCircle />
-          Gasto
+          Despesa
         </Button>
          <Button onClick={onAddPreCredit} variant="secondary">
           <PiggyBank />
