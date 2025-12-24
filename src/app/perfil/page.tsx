@@ -7,19 +7,15 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, KeyRound, Mail, Loader2 } from 'lucide-react';
 import SecureLS from 'secure-ls';
 import { useUser } from '@/firebase';
+import withAuth from '@/hoc/withAuth';
 
-export default function PerfilPage() {
+function PerfilPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-      return;
-    }
-
     if (typeof window !== 'undefined' && user) {
       const ls = new SecureLS({ encodingType: 'aes' });
       try {
@@ -79,3 +75,5 @@ export default function PerfilPage() {
     </main>
   );
 }
+
+export default withAuth(PerfilPage);

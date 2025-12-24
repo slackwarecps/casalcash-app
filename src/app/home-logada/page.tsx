@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import CasalCashApp from '@/components/app/casal-cash-app';
 import { Loader2 } from 'lucide-react';
+import withAuth from '@/hoc/withAuth';
 
-export default function HomeLogadaPage() {
+function HomeLogadaPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -30,3 +31,5 @@ export default function HomeLogadaPage() {
     </main>
   );
 }
+
+export default withAuth(HomeLogadaPage);
