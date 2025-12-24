@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import MonthlyExpensesReport from '@/components/app/monthly-expenses-report';
 import type { Expense } from '@/lib/types';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, Timestamp } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, Timestamp, doc } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -19,13 +20,21 @@ export default function ReportsPage() {
 
   const firestore = useFirestore();
   const { user } = useUser();
+  const { toast } = useToast();
 
   const expensesCollection = useMemoFirebase(() => {
     if (!user) return null;
     return collection(firestore, 'couples', COUPLE_ID, 'expenses');
   }, [firestore, user]);
 
-  const { data: expenses, isLoading: isLoadingExpenses } = useCollection<Expense>(expensesCollection);
+  const { data: expenses, isLoading: isLoadingExpenses, forceRefetch } = useCollection<Expense>(expensesCollection);
+
+  const handleDeleteExpense = (id: string, description: string) => {
+    if (!firestore) return;
+    const expenseDocRef = doc(firestore, 'couples', COUPLE_ID, 'expenses', id);
+    deleteDocumentNonBlocking(expenseDocRef);
+    toast({ title: "Despesa removida!", description: `"${description}" foi excluída.`, variant: "destructive" });
+  };
 
   const handlePreviousMonth = () => {
     setSelectedMonth(subMonths(selectedMonth, 1));
@@ -71,7 +80,11 @@ export default function ReportsPage() {
         </div>
       </div>
       
-      <MonthlyExpensesReport expenses={filteredExpenses} isLoading={isLoadingExpenses} />
+      <MonthlyExpensesReport 
+        expenses={filteredExpenses} 
+        isLoading={isLoadingExpenses}
+        onDelete={handleDeleteExpense} 
+      />
     </main>
   );
 }
