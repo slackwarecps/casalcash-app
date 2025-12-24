@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword, UserCredential, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import SecureLS from 'secure-ls';
+import Link from 'next/link';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }).default('fabio.alvaro@gmail.com'),
@@ -136,10 +137,10 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-       <div className="flex items-center gap-3 mb-8">
+      <Link href="/" className="flex items-center gap-3 mb-8 cursor-pointer">
         <Landmark className="h-10 w-10 text-primary" />
         <h1 className="text-5xl font-headline font-bold">CasalCash</h1>
-      </div>
+      </Link>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Login</CardTitle>
