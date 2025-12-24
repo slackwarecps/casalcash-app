@@ -4,6 +4,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signOut, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAnalytics, Analytics, isSupported } from 'firebase/analytics';
+import { getRemoteConfig, RemoteConfig } from 'firebase/remote-config';
 
 // Using the configuration provided by the user.
 const firebaseConfig = {
@@ -33,6 +34,7 @@ export function initializeFirebase() {
 export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
   let analytics: Analytics | null = null;
+  let remoteConfig: RemoteConfig | null = null;
   
   if (typeof window !== 'undefined') {
     isSupported().then((supported) => {
@@ -40,6 +42,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
         analytics = getAnalytics(firebaseApp);
       }
     });
+    remoteConfig = getRemoteConfig(firebaseApp);
   }
 
   return {
@@ -47,6 +50,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
     auth,
     firestore: getFirestore(firebaseApp),
     analytics,
+    remoteConfig,
     signOut: () => signOut(auth),
   };
 }

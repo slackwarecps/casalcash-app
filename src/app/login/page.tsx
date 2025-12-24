@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useRemoteConfig } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -32,8 +32,11 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const { values: remoteConfigValues } = useRemoteConfig();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const appVersion = remoteConfigValues['geral_versao_app'];
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -145,6 +148,11 @@ export default function LoginPage() {
           </form>
         </Form>
       </Card>
+      {appVersion && (
+        <p className="mt-8 text-sm text-muted-foreground">
+          Versão: {appVersion}
+        </p>
+      )}
     </main>
   );
 }

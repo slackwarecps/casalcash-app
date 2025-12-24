@@ -8,7 +8,7 @@ import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getAuth, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFirebaseApp } from '@/firebase';
+import { useFirebaseApp, useRemoteConfig } from '@/firebase';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -17,7 +17,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from '../ui/badge';
 
 interface AppHeaderProps {
   currentUser: User;
@@ -43,7 +44,10 @@ export default function AppHeader({
   onMonthChange
 }: AppHeaderProps) {
   const firebaseApp = useFirebaseApp();
+  const { values: remoteConfigValues } = useRemoteConfig();
   const router = useRouter();
+
+  const appVersion = remoteConfigValues['geral_versao_app'];
 
   const handleLogout = async () => {
     if(!firebaseApp) return;
@@ -66,7 +70,10 @@ export default function AppHeader({
     <header className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg bg-card border shadow-sm">
       <div className="flex items-center gap-3 self-start md:self-center">
         <Landmark className="h-8 w-8 text-primary" />
-        <h1 className="text-4xl font-headline font-bold">CasalCash</h1>
+        <div className="flex flex-col">
+          <h1 className="text-4xl font-headline font-bold">CasalCash</h1>
+          {appVersion && <Badge variant="secondary" className="w-fit">{appVersion}</Badge>}
+        </div>
       </div>
       
       <div className="flex items-center gap-2">
@@ -105,25 +112,25 @@ export default function AppHeader({
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Gerenciamento</DropdownMenuLabel>
              <DropdownMenuSeparator />
-            <Link href="/perfil">
-              <DropdownMenuItem>
-                <UserIcon className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
+            <Link href="/perfil" passHref>
+                <DropdownMenuItem>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                </DropdownMenuItem>
             </Link>
-            <Link href="/recurring-expenses">
+            <Link href="/recurring-expenses" passHref>
               <DropdownMenuItem>
                 <Repeat className="mr-2 h-4 w-4" />
                 <span>Cadastro de Recorrentes</span>
               </DropdownMenuItem>
             </Link>
-             <Link href="/reports">
+             <Link href="/reports" passHref>
               <DropdownMenuItem>
                 <BarChart className="mr-2 h-4 w-4" />
                 <span>Relatório Geral</span>
               </DropdownMenuItem>
             </Link>
-             <Link href="/reports/fixed-expenses">
+             <Link href="/reports/fixed-expenses" passHref>
               <DropdownMenuItem>
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Relatório Fixas</span>
@@ -139,7 +146,13 @@ export default function AppHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
+        
+        <Link href="/perfil" passHref>
+          <Button variant="ghost" size="icon">
+            <UserIcon className="text-muted-foreground" />
+            <span className="sr-only">Perfil</span>
+          </Button>
+        </Link>
         <Button variant="ghost" size="icon" onClick={handleLogout}>
           <LogOut className="text-muted-foreground" />
           <span className="sr-only">Sair</span>
