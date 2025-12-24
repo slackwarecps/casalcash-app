@@ -83,7 +83,7 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
                   <TableCell className="text-right font-medium">{formatCurrency(expense.amount)}</TableCell>
                   <TableCell className="font-medium">{expense.description}</TableCell>
                   <TableCell>
-                    <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
+                    <Badge variant={expense.paidBy === 'Fabão' ? 'fabao' : 'tati'}>
                       {expense.paidBy}
                     </Badge>
                   </TableCell>
@@ -133,7 +133,7 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
           </TableBody>
           <UiTableFooter>
               <TableRow>
-                  <TableCell>Total do Mês</TableCell>
+                  <TableCell colSpan={1}>Total do Mês</TableCell>
                   <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
                   <TableCell colSpan={onDelete ? 7 : 6}></TableCell>
               </TableRow>
