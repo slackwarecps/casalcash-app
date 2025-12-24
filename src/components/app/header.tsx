@@ -1,6 +1,6 @@
 "use client"
 
-import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2, PiggyBank, Menu } from 'lucide-react';
+import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2, PiggyBank, Menu, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { User } from '@/lib/types';
@@ -109,6 +109,12 @@ export default function AppHeader({
               <DropdownMenuItem>
                 <Repeat className="mr-2 h-4 w-4" />
                 <span>Cadastro de Recorrentes</span>
+              </DropdownMenuItem>
+            </Link>
+             <Link href="/reports">
+              <DropdownMenuItem>
+                <BarChart className="mr-2 h-4 w-4" />
+                <span>Relatórios</span>
               </DropdownMenuItem>
             </Link>
             <DropdownMenuItem onClick={onApplyRecurring}>
