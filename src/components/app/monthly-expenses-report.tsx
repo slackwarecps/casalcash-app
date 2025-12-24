@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useRouter } from 'next/navigation';
 
 interface MonthlyExpensesReportProps {
   expenses: Expense[];
@@ -29,10 +30,15 @@ interface MonthlyExpensesReportProps {
 }
 
 export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }: MonthlyExpensesReportProps) {
-  
+  const router = useRouter();
+
   const totalAmount = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
+  
+  const handleRowClick = (expenseId: string) => {
+    router.push(`/expenses/${expenseId}`);
+  };
 
   return (
     <Card>
@@ -72,7 +78,7 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
               </TableRow>
             ) : (
               expenses.map((expense) => (
-                <TableRow key={expense.id}>
+                <TableRow key={expense.id} onClick={() => handleRowClick(expense.id)} className="cursor-pointer">
                   <TableCell>{format(expense.date as Date, "dd/MM/yy", { locale: ptBR })}</TableCell>
                   <TableCell className="text-right font-medium">{formatCurrency(expense.amount)}</TableCell>
                   <TableCell className="font-medium">{expense.description}</TableCell>
@@ -99,7 +105,7 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
                       </div>
                   </TableCell>
                   {onDelete && (
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -127,7 +133,7 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
           </TableBody>
           <UiTableFooter>
               <TableRow>
-                  <TableCell className="font-bold text-lg">Total do Mês</TableCell>
+                  <TableCell>Total do Mês</TableCell>
                   <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
                   <TableCell colSpan={onDelete ? 7 : 6}></TableCell>
               </TableRow>
