@@ -8,13 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser, useRemoteConfig, useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword, UserCredential, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, collection } from 'firebase/firestore';
 import SecureLS from 'secure-ls';
 import Link from 'next/link';
 
@@ -61,18 +61,38 @@ export default function LoginPage() {
     if (!firestore) return;
     const user = userCredential.user;
     
-    // Check if user profile exists, if not, create it
+    // 1. Check if user profile exists, if not, create it
     const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    let userDoc = await getDoc(userDocRef);
+    let userData = userDoc.data();
 
     if (!userDoc.exists()) {
-      await setDoc(userDocRef, {
+      const newUserProfile = {
         id: user.uid,
         name: user.displayName || user.email,
         email: user.email,
         createdAt: Timestamp.now(),
         familyId: null,
-      });
+      };
+      await setDoc(userDocRef, newUserProfile);
+      userData = newUserProfile; // Use the new data for the next step
+    }
+
+    // 2. Check if user has a family, if not, create one and assign it
+    if (userData && !userData.familyId) {
+        const familiesCollectionRef = collection(firestore, 'families');
+        const newFamilyDocRef = doc(familiesCollectionRef); // Create a new doc with a random ID
+        
+        const newFamily = {
+            id: newFamilyDocRef.id,
+            ownerId: user.uid,
+            createdAt: Timestamp.now(),
+        };
+
+        await setDoc(newFamilyDocRef, newFamily);
+
+        // Update the user's familyId
+        await setDoc(userDocRef, { familyId: newFamily.id }, { merge: true });
     }
 
     // @ts-ignore
