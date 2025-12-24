@@ -46,3 +46,7 @@ Um aplicativo de controle financeiro para casais, projetado para simplificar a g
 - **Notificações:** O sistema exibe notificações (toasts) para confirmar ações do usuário (criação, edição, exclusão).
 - **Performance:** Os dados são carregados de forma assíncrona, com indicadores de carregamento (loaders) para feedback visual ao usuário.
 - **Segurança:** Regras de segurança do Firestore devem ser configuradas para garantir que cada usuário acesse apenas seus próprios dados. (Atualmente em modo de desenvolvimento).
+
+## LEMBRE-SE
+
+* lembre-se: sempre registre os requisitos funcionais e nao funcionais no readme.md em portugues.
