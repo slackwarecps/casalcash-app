@@ -25,6 +25,7 @@ import { collection, doc, Timestamp, writeBatch } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import AddPreCreditDialog from './add-pre-credit-dialog';
 import PreCreditList from './pre-credit-list';
+import MonthlyExpensesReport from './monthly-expenses-report';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -327,7 +328,7 @@ export default function CasalCashApp() {
     return (filteredExpenses || []).map(exp => ({
       ...exp,
       date: (exp.date as unknown as Timestamp).toDate()
-    }));
+    })).sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [filteredExpenses]);
   
   const preCreditsWithDateObjects = useMemo(() => {
@@ -360,6 +361,8 @@ export default function CasalCashApp() {
           currentUser={currentUser} 
           selectedMonth={selectedMonth}
         />
+
+        <MonthlyExpensesReport expenses={expensesWithDateObjects} isLoading={isLoadingExpenses} />
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <ExpenseList expenses={expensesWithDateObjects} onDelete={deleteExpense} isLoading={isLoadingExpenses} />
