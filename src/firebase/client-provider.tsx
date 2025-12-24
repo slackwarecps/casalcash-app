@@ -3,7 +3,7 @@
 import React, { useMemo, type ReactNode, useEffect, useState } from 'react';
 import { FirebaseProvider, RemoteConfigValues } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
-import { fetchAndActivate, getAll } from 'firebase/remote-config';
+import { fetchAndActivate, getAll, RemoteConfig } from 'firebase/remote-config';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -18,15 +18,15 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   useEffect(() => {
     if (firebaseServices.remoteConfig) {
-      const remoteConfig = firebaseServices.remoteConfig;
+      const remoteConfig = firebaseServices.remoteConfig as RemoteConfig;
       remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
       remoteConfig.defaultConfig = {
         "welcome_message": "Bem-vindo ao CasalCash!",
         "geral_versao_app": "v-.-.-",
       };
 
-      const setValues = () => {
-          const allValues = getAll(remoteConfig);
+      const setValues = (config: RemoteConfig) => {
+          const allValues = getAll(config);
           const newValues: RemoteConfigValues = {};
           for (const key of Object.keys(allValues)) {
               newValues[key] = allValues[key].asString();
@@ -34,13 +34,13 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
           setRemoteConfigValues(newValues);
       };
 
-      setValues(); // Set initial (default) values
+      setValues(remoteConfig); // Set initial (default) values
 
       fetchAndActivate(remoteConfig)
         .then((activated) => {
           if (activated) {
             console.log('Remote Config values were activated.');
-            setValues(); // Set new values after activation
+            setValues(remoteConfig); // Set new values after activation
           } else {
             console.log('No new Remote Config values to activate.');
           }
