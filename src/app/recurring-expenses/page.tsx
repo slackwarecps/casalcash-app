@@ -106,7 +106,7 @@ export default function RecurringExpensesPage() {
                     <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
                     <TableCell>{formatCurrency(expense.amount)}</TableCell>
                     <TableCell>
-                      <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
+                      <Badge variant={expense.paidBy === 'Fabão' ? 'fabao' : 'tati'}>
                         {expense.paidBy}
                       </Badge>
                     </TableCell>

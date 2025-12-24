@@ -74,7 +74,7 @@ export default function PreCreditList({ preCredits, onEdit, onDelete, isLoading 
                       <div className="font-medium">{credit.description}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={credit.author === 'Fabão' ? 'default' : 'secondary'}>
+                      <Badge variant={credit.author === 'Fabão' ? 'fabao' : 'tati'}>
                         {credit.author}
                       </Badge>
                     </TableCell>
