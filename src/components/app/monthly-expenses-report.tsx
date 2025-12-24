@@ -34,9 +34,9 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Pago por</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Rateio</TableHead>
               <TableHead>Tipo</TableHead>
@@ -60,13 +60,13 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
               expenses.map((expense) => (
                 <TableRow key={expense.id}>
                   <TableCell>{format(expense.date as Date, "dd/MM/yy", { locale: ptBR })}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                   <TableCell className="font-medium">{expense.description}</TableCell>
                   <TableCell>
                     <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
                       {expense.paidBy}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                   <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
                   <TableCell><Badge variant="outline">{expense.split}</Badge></TableCell>
                   <TableCell>
