@@ -40,10 +40,6 @@ Um aplicativo de controle financeiro para casais, projetado para simplificar a g
 ## Requisitos Não Funcionais
 
 - **Tecnologia:** Aplicação web desenvolvida com Next.js, React, TypeScript e Tailwind CSS.
-  - **Framework Principal:** **Next.js** com App Router para renderização no servidor e no cliente, e um sistema de roteamento otimizado.
-  - **Linguagem:** **TypeScript** para adicionar tipagem estática e garantir um código mais seguro.
-  - **Biblioteca de UI:** **React** para a construção da interface de usuário de forma componentizada.
-  - **Estilização:** **Tailwind CSS** para criar o design da aplicação com classes utilitárias.
 - **Componentes de UI:** Utilização da biblioteca de componentes **ShadCN UI** para uma interface moderna, acessível e consistente.
 - **Persistência de Dados e Autenticação:**
   - **Banco de Dados:** **Firebase Firestore** para armazenamento de dados em tempo real.
@@ -53,6 +49,27 @@ Um aplicativo de controle financeiro para casais, projetado para simplificar a g
 - **Notificações:** O sistema exibe notificações (toasts) para confirmar ações do usuário (criação, edição, exclusão).
 - **Performance:** Os dados são carregados de forma assíncrona, com indicadores de carregamento (loaders) para feedback visual ao usuário.
 - **Segurança:** Regras de segurança do Firestore devem ser configuradas para garantir que cada usuário acesse apenas seus próprios dados. (Atualmente em modo de desenvolvimento).
+
+### Stack Tecnológica
+- **Framework Principal:** **Next.js** com App Router para renderização no servidor e no cliente, e um sistema de roteamento otimizado.
+- **Linguagem:** **TypeScript** para adicionar tipagem estática e garantir um código mais seguro.
+- **Biblioteca de UI:** **React** para a construção da interface de usuário de forma componentizada.
+- **Estilização:** **Tailwind CSS** para criar o design da aplicação com classes utilitárias.
+- **Componentes de UI:** **ShadCN UI** para uma interface moderna, acessível e consistente.
+- **Banco de Dados e Autenticação:**
+    - **Firebase Firestore:** Banco de dados NoSQL em tempo real para armazenar todos os dados da aplicação.
+    - **Firebase Authentication:** Serviço para gerenciar a autenticação de usuários por email e senha.
+- **Inteligência Artificial:** **Genkit** para orquestrar chamadas a modelos de linguagem na nuvem.
+
+### Estrutura do Banco de Dados (Firestore)
+A estrutura de dados no Firestore é organizada para dar suporte a múltiplos casais, embora a implementação atual utilize um ID fixo (`casalUnico`).
+
+- **`users/{userId}`**: Armazena os perfis dos usuários (nome, email).
+- **`couples/{coupleId}`**: Documento central que representa o casal. Todas as informações financeiras compartilhadas estão aninhadas sob este documento para garantir o isolamento dos dados.
+  - **`expenses/{expenseId}`**: Coleção que armazena todas as despesas, tanto as fixas (recorrentes) quanto as variáveis (pontuais).
+  - **`loans/{loanId}`**: Coleção para registrar empréstimos ou compras parceladas significativas entre o casal.
+  - **`preCredits/{preCreditId}`**: Coleção para registrar adiantamentos financeiros feitos por um dos parceiros.
+  - **`recurringExpenses/{recurringExpenseId}`**: Coleção que serve como um "modelo" para as despesas fixas, utilizada para gerar os lançamentos mensais.
 
 ## LEMBRE-SE
 
