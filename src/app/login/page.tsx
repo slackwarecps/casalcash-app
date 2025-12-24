@@ -15,7 +15,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import SecureLS from 'secure-ls';
-import { getString } from 'firebase/remote-config';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }).default('fabio.alvaro@gmail.com'),
@@ -33,19 +32,11 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const remoteConfig = useRemoteConfig();
+  const { values: remoteConfigValues } = useRemoteConfig();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [appVersion, setAppVersion] = useState('');
-
-  useEffect(() => {
-    if (remoteConfig) {
-      const versionString = getString(remoteConfig, 'geral_versao_app');
-      if (versionString) {
-        setAppVersion(versionString);
-      }
-    }
-  }, [remoteConfig]);
+  
+  const appVersion = remoteConfigValues['geral_versao_app'];
 
   useEffect(() => {
     if (!isUserLoading && user) {

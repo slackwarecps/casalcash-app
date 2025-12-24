@@ -8,6 +8,8 @@ import { Analytics } from 'firebase/analytics';
 import { RemoteConfig } from 'firebase/remote-config';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
+export type RemoteConfigValues = { [key: string]: string };
+
 interface FirebaseProviderProps {
   children: ReactNode;
   firebaseApp: FirebaseApp;
@@ -15,6 +17,7 @@ interface FirebaseProviderProps {
   auth: Auth;
   analytics?: Analytics | null;
   remoteConfig?: RemoteConfig | null;
+  remoteConfigValues?: RemoteConfigValues;
 }
 
 // Internal state for user authentication
@@ -32,6 +35,7 @@ export interface FirebaseContextState {
   auth: Auth | null; // The Auth service instance
   analytics: Analytics | null;
   remoteConfig: RemoteConfig | null;
+  remoteConfigValues: RemoteConfigValues;
   // User authentication state
   user: User | null;
   isUserLoading: boolean; // True during initial auth check
@@ -45,6 +49,7 @@ export interface FirebaseServicesAndUser {
   auth: Auth;
   analytics: Analytics | null;
   remoteConfig: RemoteConfig | null;
+  remoteConfigValues: RemoteConfigValues;
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -70,6 +75,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
   analytics,
   remoteConfig,
+  remoteConfigValues = {},
 }) => {
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
@@ -109,11 +115,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth: servicesAvailable ? auth : null,
       analytics: servicesAvailable && analytics ? analytics : null,
       remoteConfig: servicesAvailable && remoteConfig ? remoteConfig : null,
+      remoteConfigValues,
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
     };
-  }, [firebaseApp, firestore, auth, analytics, remoteConfig, userAuthState]);
+  }, [firebaseApp, firestore, auth, analytics, remoteConfig, userAuthState, remoteConfigValues]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -144,6 +151,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     auth: context.auth,
     analytics: context.analytics,
     remoteConfig: context.remoteConfig,
+    remoteConfigValues: context.remoteConfigValues,
     user: context.user,
     isUserLoading: context.isUserLoading,
     userError: context.userError,
@@ -174,11 +182,12 @@ export const useAnalytics = (): Analytics | null => {
   return analytics;
 };
 
-/** Hook to access Firebase Remote Config instance. */
-export const useRemoteConfig = (): RemoteConfig | null => {
-  const { remoteConfig } = useFirebase();
-  return remoteConfig;
+/** Hook to access Firebase Remote Config instance and its reactive values. */
+export const useRemoteConfig = (): { remoteConfig: RemoteConfig | null, values: RemoteConfigValues } => {
+  const { remoteConfig, remoteConfigValues } = useFirebase();
+  return { remoteConfig, values: remoteConfigValues };
 };
+
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 

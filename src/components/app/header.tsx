@@ -18,8 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEffect, useState } from 'react';
-import { getString } from 'firebase/remote-config';
 import { Badge } from '../ui/badge';
 
 interface AppHeaderProps {
@@ -46,18 +44,10 @@ export default function AppHeader({
   onMonthChange
 }: AppHeaderProps) {
   const firebaseApp = useFirebaseApp();
-  const remoteConfig = useRemoteConfig();
+  const { values: remoteConfigValues } = useRemoteConfig();
   const router = useRouter();
-  const [appVersion, setAppVersion] = useState('');
 
-  useEffect(() => {
-    if (remoteConfig) {
-      const versionString = getString(remoteConfig, 'geral_versao_app');
-      if (versionString) {
-        setAppVersion(versionString);
-      }
-    }
-  }, [remoteConfig]);
+  const appVersion = remoteConfigValues['geral_versao_app'];
 
   const handleLogout = async () => {
     if(!firebaseApp) return;
