@@ -23,6 +23,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       // Set default values (optional, but recommended)
       remoteConfig.defaultConfig = {
         "welcome_message": "Bem-vindo ao CasalCash!",
+        "geral_versao_app": "v-.-.-",
       };
 
       // Fetch and activate
