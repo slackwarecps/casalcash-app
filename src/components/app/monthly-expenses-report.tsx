@@ -197,9 +197,9 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
             </TableBody>
             <UiTableFooter>
                 <TableRow>
-                    <TableCell colSpan={onDelete ? 2 : 1}>Total do Mês</TableCell>
+                    <TableCell>Total do Mês</TableCell>
                     <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
-                    <TableCell colSpan={onDelete ? 6 : 5}></TableCell>
+                    <TableCell colSpan={onDelete ? 7 : 6}></TableCell>
                 </TableRow>
             </UiTableFooter>
           </Table>
