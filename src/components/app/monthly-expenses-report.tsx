@@ -81,15 +81,46 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
         {/* Mobile View */}
         <div className="md:hidden flex flex-col gap-3">
           {expenses.map((expense) => (
-             <div key={expense.id} onClick={() => handleRowClick(expense.id)} className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer space-y-2">
-                <div className="flex justify-between items-start">
-                    <div className="font-medium pr-2 flex-1">{expense.description}</div>
-                    <div className="font-bold text-lg whitespace-nowrap">{formatCurrency(expense.amount)}</div>
+             <div key={expense.id} className="p-4 border rounded-lg space-y-3">
+                <div onClick={() => handleRowClick(expense.id)} className="cursor-pointer space-y-2">
+                    <div className="flex justify-between items-start">
+                        <div className="font-medium pr-2 flex-1">{expense.description}</div>
+                        <div className="font-bold text-lg whitespace-nowrap">{formatCurrency(expense.amount)}</div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })}</span>
+                        <Badge variant="outline">{expense.split}</Badge>
+                    </div>
                 </div>
-                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{format(expense.date as Date, "dd/MM/yyyy", { locale: ptBR })}</span>
-                    <Badge variant="outline">{expense.split}</Badge>
-                 </div>
+                <div className="flex justify-between items-center border-t pt-3">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Pago por:</span>
+                        <Badge variant={expense.paidBy === 'Fabão' ? 'fabao' : 'tati'}>
+                            {expense.paidBy}
+                        </Badge>
+                    </div>
+                    {onDelete && (
+                         <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Essa ação não pode ser desfeita. Isso irá deletar permanentemente a despesa "{expense.description}".
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => onDelete(expense.id, expense.description)}>Sim, excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </div>
             </div>
           ))}
         </div>
@@ -166,9 +197,9 @@ export default function MonthlyExpensesReport({ expenses, isLoading, onDelete }:
             </TableBody>
             <UiTableFooter>
                 <TableRow>
-                    <TableCell>Total do Mês</TableCell>
+                    <TableCell colSpan={onDelete ? 2 : 1}>Total do Mês</TableCell>
                     <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
-                    <TableCell colSpan={onDelete ? 7 : 6}></TableCell>
+                    <TableCell colSpan={onDelete ? 6 : 5}></TableCell>
                 </TableRow>
             </UiTableFooter>
           </Table>
