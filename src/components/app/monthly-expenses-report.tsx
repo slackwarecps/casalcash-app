@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as UiTableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
@@ -31,73 +30,71 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-96">
-          <Table>
-            <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Data</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Pago por</TableHead>
+              <TableHead>Rateio</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
               <TableRow>
-                <TableHead className="w-[100px]">Data</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Pago por</TableHead>
-                <TableHead>Rateio</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+            ) : expenses.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  Nenhuma despesa encontrada para este mês.
+                </TableCell>
+              </TableRow>
+            ) : (
+              expenses.map((expense) => (
+                <TableRow key={expense.id}>
+                  <TableCell>{format(expense.date as Date, "dd/MM/yy", { locale: ptBR })}</TableCell>
+                  <TableCell className="font-medium">{expense.description}</TableCell>
+                  <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
+                      {expense.paidBy}
+                    </Badge>
                   </TableCell>
-                </TableRow>
-              ) : expenses.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    Nenhuma despesa encontrada para este mês.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                expenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{format(expense.date as Date, "dd/MM/yy", { locale: ptBR })}</TableCell>
-                    <TableCell className="font-medium">{expense.description}</TableCell>
-                    <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
-                    <TableCell>
-                      <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
-                        {expense.paidBy}
+                  <TableCell><Badge variant="outline">{expense.split}</Badge></TableCell>
+                  <TableCell>
+                      <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
+                          {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
                       </Badge>
-                    </TableCell>
-                    <TableCell><Badge variant="outline">{expense.split}</Badge></TableCell>
-                    <TableCell>
-                        <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
-                            {expense.tipoDespesa === 'recorrente' ? 'Fixa' : 'Variável'}
-                        </Badge>
-                    </TableCell>
-                    <TableCell>
-                        <div className="flex items-center gap-1">
-                         {expense.isPaid ? (
-                            <CheckCircle className="h-4 w-4 text-green-600"/>
-                        ) : (
-                            <XCircle className="h-4 w-4 text-red-600"/>
-                        )}
-                        <span className='sr-only'>{expense.isPaid ? 'Pago' : 'Não Pago'}</span>
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-            <UiTableFooter>
-                <TableRow>
-                    <TableCell colSpan={7} className="text-right font-bold text-lg">Total do Mês</TableCell>
-                    <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
+                  </TableCell>
+                  <TableCell>
+                      <div className="flex items-center gap-1">
+                       {expense.isPaid ? (
+                          <CheckCircle className="h-4 w-4 text-green-600"/>
+                      ) : (
+                          <XCircle className="h-4 w-4 text-red-600"/>
+                      )}
+                      <span className='sr-only'>{expense.isPaid ? 'Pago' : 'Não Pago'}</span>
+                      </div>
+                  </TableCell>
+                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                 </TableRow>
-            </UiTableFooter>
-          </Table>
-        </ScrollArea>
+              ))
+            )}
+          </TableBody>
+          <UiTableFooter>
+              <TableRow>
+                  <TableCell colSpan={7} className="text-right font-bold text-lg">Total do Mês</TableCell>
+                  <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
+              </TableRow>
+          </UiTableFooter>
+        </Table>
       </CardContent>
     </Card>
   );
