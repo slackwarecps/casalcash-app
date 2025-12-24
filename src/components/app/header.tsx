@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from 'react';
-import { getValue, asString } from 'firebase/remote-config';
+import { getString } from 'firebase/remote-config';
 import { Badge } from '../ui/badge';
 
 interface AppHeaderProps {
@@ -52,8 +52,7 @@ export default function AppHeader({
 
   useEffect(() => {
     if (remoteConfig) {
-      const versionValue = getValue(remoteConfig, 'geral_versao_app');
-      const versionString = asString(versionValue);
+      const versionString = getString(remoteConfig, 'geral_versao_app');
       if (versionString) {
         setAppVersion(versionString);
       }
@@ -157,7 +156,13 @@ export default function AppHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
+        
+        <Link href="/perfil" passHref>
+          <Button variant="ghost" size="icon">
+            <UserIcon className="text-muted-foreground" />
+            <span className="sr-only">Perfil</span>
+          </Button>
+        </Link>
         <Button variant="ghost" size="icon" onClick={handleLogout}>
           <LogOut className="text-muted-foreground" />
           <span className="sr-only">Sair</span>
