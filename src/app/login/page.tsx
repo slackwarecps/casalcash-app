@@ -13,7 +13,8 @@ import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
+import SecureLS from 'secure-ls';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }).default('fabio.alvaro@gmail.com'),
@@ -49,8 +50,21 @@ export default function LoginPage() {
         return;
     }
     try {
-        await signInWithEmailAndPassword(auth, values.email, values.password);
-        // The useEffect will handle the redirect to '/home-logada'
+        const userCredential: UserCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+        
+        if (userCredential.user) {
+          // @ts-ignore
+          const accessToken = userCredential.user.accessToken;
+          const userEmail = userCredential.user.email;
+
+          if (typeof window !== 'undefined') {
+            const ls = new SecureLS({ encodingType: 'aes' });
+            ls.set('userToken', accessToken);
+            ls.set('userEmail', userEmail);
+          }
+        }
+
+        router.push('/home-logada');
     } catch (error) {
       let errorMessage = 'Ocorreu um erro ao tentar fazer login.';
       if (error instanceof FirebaseError) {
