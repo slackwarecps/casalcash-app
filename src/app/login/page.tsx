@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser, useFirestore, useRemoteConfig } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -44,13 +44,10 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const { values: remoteConfigValues } = useRemoteConfig();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
-  const appVersion = remoteConfigValues['geral_versao_app'];
-
   useEffect(() => {
     if (!isUserLoading && user) {
       router.push('/home-logada');
@@ -78,6 +75,8 @@ export default function LoginPage() {
       userData = newUserProfile; // Use the new data for the next step
     }
 
+    let finalFamilyId = userData?.familyId;
+
     // 2. Check if user has a family, if not, create one and assign it
     if (userData && !userData.familyId) {
         const familiesCollectionRef = collection(firestore, 'families');
@@ -93,6 +92,7 @@ export default function LoginPage() {
 
         // Update the user's familyId
         await setDoc(userDocRef, { familyId: newFamily.id }, { merge: true });
+        finalFamilyId = newFamily.id;
     }
 
     // @ts-ignore
@@ -103,6 +103,7 @@ export default function LoginPage() {
       const ls = new SecureLS({ encodingType: 'aes' });
       ls.set('userToken', accessToken);
       ls.set('userEmail', userEmail);
+      ls.set('familyId', finalFamilyId);
     }
     
     router.push('/home-logada');
@@ -241,11 +242,6 @@ export default function LoginPage() {
           </form>
         </Form>
       </Card>
-      {appVersion && (
-        <p className="mt-8 text-sm text-muted-foreground">
-          Versão: {appVersion}
-        </p>
-      )}
     </main>
   );
 }

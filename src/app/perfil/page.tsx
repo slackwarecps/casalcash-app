@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, KeyRound, Mail, Loader2 } from 'lucide-react';
+import { ArrowLeft, KeyRound, Mail, Loader2, Users } from 'lucide-react';
 import SecureLS from 'secure-ls';
 import { useUser } from '@/firebase';
 import withAuth from '@/hoc/withAuth';
@@ -13,6 +13,7 @@ function PerfilPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [familyId, setFamilyId] = useState<string | null>(null);
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
@@ -21,12 +22,15 @@ function PerfilPage() {
       try {
         const storedToken = ls.get('userToken');
         const storedEmail = ls.get('userEmail');
+        const storedFamilyId = ls.get('familyId');
         setToken(storedToken || 'Nenhum token encontrado.');
         setEmail(storedEmail || 'Nenhum email encontrado.');
+        setFamilyId(storedFamilyId || 'Nenhum ID de família encontrado.');
       } catch (e) {
         console.error('Falha ao ler o localStorage seguro:', e);
         setToken('Erro ao ler o token.');
         setEmail('Erro ao ler o email.');
+        setFamilyId('Erro ao ler o ID da família.');
       }
     }
   }, [user, isUserLoading, router]);
@@ -57,6 +61,13 @@ function PerfilPage() {
               <span>Email Logado</span>
             </h3>
             <p className="p-3 bg-muted rounded-md text-sm break-words">{email || 'Carregando...'}</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 font-semibold text-lg">
+              <Users className="h-5 w-5 text-primary" />
+              <span>ID da Família</span>
+            </h3>
+            <p className="p-3 bg-muted rounded-md text-sm break-words">{familyId || 'Carregando...'}</p>
           </div>
           <div className="flex flex-col gap-2">
             <h3 className="flex items-center gap-2 font-semibold text-lg">
