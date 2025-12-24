@@ -1,6 +1,6 @@
 # CasalCash
 
-Um aplicativo de controle financeiro para casais, projetado para simplificar a gestão de despesas, empréstimos e o balanço financeiro mensal.
+Um aplicativo de controle financeiro para casais, projetado para simplificar a gestão de despesas, empréstimos e o balanço financeiro mensal. OK.
 
 ## Requisitos Funcionais
 
