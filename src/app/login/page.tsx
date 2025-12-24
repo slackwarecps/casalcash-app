@@ -8,13 +8,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useRemoteConfig } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import SecureLS from 'secure-ls';
+import { getString } from 'firebase/remote-config';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido.' }).default('fabio.alvaro@gmail.com'),
@@ -32,8 +33,19 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const remoteConfig = useRemoteConfig();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
+
+  useEffect(() => {
+    if (remoteConfig) {
+      const versionString = getString(remoteConfig, 'geral_versao_app');
+      if (versionString) {
+        setAppVersion(versionString);
+      }
+    }
+  }, [remoteConfig]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -145,6 +157,11 @@ export default function LoginPage() {
           </form>
         </Form>
       </Card>
+      {appVersion && (
+        <p className="mt-8 text-sm text-muted-foreground">
+          Versão: {appVersion}
+        </p>
+      )}
     </main>
   );
 }
