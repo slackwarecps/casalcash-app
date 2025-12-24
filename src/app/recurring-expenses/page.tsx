@@ -61,7 +61,7 @@ export default function RecurringExpensesPage() {
 
   return (
     <main className="container mx-auto p-4 md:p-8">
-      <Button variant="outline" onClick={() => router.push('/')} className="mb-4">
+      <Button variant="outline" onClick={() => router.push('/home-logada')} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Voltar para Home
       </Button>

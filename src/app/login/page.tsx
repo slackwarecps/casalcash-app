@@ -36,27 +36,22 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      console.log('Usuário já está logado. Redirecionando para a home.');
-      router.push('/');
+      router.push('/home-logada');
     }
   }, [user, isUserLoading, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log('Tentando fazer login com:', values.email);
     setIsLoading(true);
     setAuthError(null);
     if (!auth) {
-        console.error('Serviço de autenticação não está disponível.');
         setAuthError('Serviço de autenticação não está disponível.');
         setIsLoading(false);
         return;
     }
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-        console.log('Login bem-sucedido!', userCredential.user);
-        // O useEffect cuidará do redirecionamento
+        await signInWithEmailAndPassword(auth, values.email, values.password);
+        // The useEffect will handle the redirect to '/home-logada'
     } catch (error) {
-      console.error('Erro no login:', error);
       let errorMessage = 'Ocorreu um erro ao tentar fazer login.';
       if (error instanceof FirebaseError) {
          if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -66,10 +61,11 @@ export default function LoginPage() {
       setAuthError(errorMessage);
     } finally {
         setIsLoading(false);
-        console.log('Processo de login finalizado.');
     }
   }
 
+  // While checking for user or if user exists, show a loader.
+  // The useEffect will handle redirection if the user is logged in.
   if (isUserLoading || user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
@@ -78,6 +74,7 @@ export default function LoginPage() {
     );
   }
 
+  // Only show the login form if the user is definitively not logged in.
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
        <div className="flex items-center gap-3 mb-8">

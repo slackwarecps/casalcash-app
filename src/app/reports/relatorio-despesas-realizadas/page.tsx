@@ -3,8 +3,8 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import MonthlyFixedExpensesReport from '@/components/app/monthly-fixed-expenses-report';
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import MonthlyExpensesReport from '@/components/app/monthly-expenses-report';
 import type { Expense } from '@/lib/types';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
@@ -13,7 +13,7 @@ import { ptBR } from 'date-fns/locale';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
-export default function FixedExpensesReportPage() {
+export default function ReportsPage() {
   const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
@@ -44,7 +44,7 @@ export default function FixedExpensesReportPage() {
     return expenses
       .filter(exp => {
         const expDate = (exp.date as Timestamp).toDate();
-        return isWithinInterval(expDate, { start, end }) && exp.tipoDespesa === 'recorrente';
+        return isWithinInterval(expDate, { start, end });
       })
       .map(exp => ({
         ...exp,
@@ -71,7 +71,7 @@ export default function FixedExpensesReportPage() {
         </div>
       </div>
       
-      <MonthlyFixedExpensesReport expenses={filteredExpenses} isLoading={isLoadingExpenses} />
+      <MonthlyExpensesReport expenses={filteredExpenses} isLoading={isLoadingExpenses} />
     </main>
   );
 }
