@@ -35,12 +35,12 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
             <TableRow>
               <TableHead className="w-[100px]">Data</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
               <TableHead>Pago por</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Categoria</TableHead>
               <TableHead>Rateio</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -61,12 +61,13 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
                 <TableRow key={expense.id}>
                   <TableCell>{format(expense.date as Date, "dd/MM/yy", { locale: ptBR })}</TableCell>
                   <TableCell className="font-medium">{expense.description}</TableCell>
-                  <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
                   <TableCell>
                     <Badge variant={expense.paidBy === 'Fabão' ? 'default' : 'secondary'}>
                       {expense.paidBy}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
+                  <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
                   <TableCell><Badge variant="outline">{expense.split}</Badge></TableCell>
                   <TableCell>
                       <Badge variant={expense.tipoDespesa === 'recorrente' ? 'destructive' : 'secondary'} className="capitalize">
@@ -83,7 +84,6 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
                       <span className='sr-only'>{expense.isPaid ? 'Pago' : 'Não Pago'}</span>
                       </div>
                   </TableCell>
-                  <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                 </TableRow>
               ))
             )}
