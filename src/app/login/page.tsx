@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser, useRemoteConfig } from '@/firebase';
+import { useAuth, useUser, useRemoteConfig, useFirestore } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword, UserCredential, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import SecureLS from 'secure-ls';
 import Link from 'next/link';
 
@@ -41,6 +42,7 @@ export default function LoginPage() {
   });
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { values: remoteConfigValues } = useRemoteConfig();
   const [authError, setAuthError] = useState<string | null>(null);
@@ -55,6 +57,37 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
+  async function handleUserSession(userCredential: UserCredential) {
+    if (!firestore) return;
+    const user = userCredential.user;
+    
+    // Check if user profile exists, if not, create it
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      await setDoc(userDocRef, {
+        id: user.uid,
+        name: user.displayName || user.email,
+        email: user.email,
+        createdAt: Timestamp.now(),
+        familyId: null,
+      });
+    }
+
+    // @ts-ignore
+    const accessToken = user.accessToken;
+    const userEmail = user.email;
+
+    if (typeof window !== 'undefined') {
+      const ls = new SecureLS({ encodingType: 'aes' });
+      ls.set('userToken', accessToken);
+      ls.set('userEmail', userEmail);
+    }
+    
+    router.push('/home-logada');
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     setAuthError(null);
@@ -64,21 +97,8 @@ export default function LoginPage() {
         return;
     }
     try {
-        const userCredential: UserCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-        
-        if (userCredential.user) {
-          // @ts-ignore
-          const accessToken = userCredential.user.accessToken;
-          const userEmail = userCredential.user.email;
-
-          if (typeof window !== 'undefined') {
-            const ls = new SecureLS({ encodingType: 'aes' });
-            ls.set('userToken', accessToken);
-            ls.set('userEmail', userEmail);
-          }
-        }
-
-        router.push('/home-logada');
+        const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+        await handleUserSession(userCredential);
     } catch (error) {
       let errorMessage = 'Ocorreu um erro ao tentar fazer login.';
       if (error instanceof FirebaseError) {
@@ -103,25 +123,19 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      if (userCredential.user) {
-        // @ts-ignore
-        const accessToken = userCredential.user.accessToken;
-        const userEmail = userCredential.user.email;
-        if (typeof window !== 'undefined') {
-          const ls = new SecureLS({ encodingType: 'aes' });
-          ls.set('userToken', accessToken);
-          ls.set('userEmail', userEmail);
-        }
-      }
-      router.push('/home-logada');
+      await handleUserSession(userCredential);
     } catch (error) {
       let errorMessage = 'Ocorreu um erro ao tentar fazer login com o Google.';
       if (error instanceof FirebaseError) {
         if (error.code !== 'auth/popup-closed-by-user') {
           errorMessage = 'Falha na autenticação com Google. Tente novamente.';
+        } else {
+            errorMessage = null; // Don't show error if user closes popup
         }
       }
-      setAuthError(errorMessage);
+      if (errorMessage) {
+        setAuthError(errorMessage);
+      }
     } finally {
       setIsGoogleLoading(false);
     }
@@ -195,7 +209,7 @@ export default function LoginPage() {
                     </span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
                   {isGoogleLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
