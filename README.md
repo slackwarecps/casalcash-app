@@ -40,8 +40,15 @@ Um aplicativo de controle financeiro para casais, projetado para simplificar a g
 ## Requisitos Não Funcionais
 
 - **Tecnologia:** Aplicação web desenvolvida com Next.js, React, TypeScript e Tailwind CSS.
-- **Componentes de UI:** Utilização da biblioteca de componentes ShadCN UI para uma interface moderna e consistente.
-- **Persistência de Dados:** O banco de dados utilizado é o Firestore (Firebase), com atualizações em tempo real.
+  - **Framework Principal:** **Next.js** com App Router para renderização no servidor e no cliente, e um sistema de roteamento otimizado.
+  - **Linguagem:** **TypeScript** para adicionar tipagem estática e garantir um código mais seguro.
+  - **Biblioteca de UI:** **React** para a construção da interface de usuário de forma componentizada.
+  - **Estilização:** **Tailwind CSS** para criar o design da aplicação com classes utilitárias.
+- **Componentes de UI:** Utilização da biblioteca de componentes **ShadCN UI** para uma interface moderna, acessível e consistente.
+- **Persistência de Dados e Autenticação:**
+  - **Banco de Dados:** **Firebase Firestore** para armazenamento de dados em tempo real.
+  - **Autenticação:** **Firebase Authentication** para gerenciar o login dos usuários.
+- **Inteligência Artificial:** **Genkit** para orquestrar chamadas a modelos de linguagem, como na funcionalidade de "Reconciliar Dívidas".
 - **Responsividade:** A interface é adaptável para uso em desktops e dispositivos móveis.
 - **Notificações:** O sistema exibe notificações (toasts) para confirmar ações do usuário (criação, edição, exclusão).
 - **Performance:** Os dados são carregados de forma assíncrona, com indicadores de carregamento (loaders) para feedback visual ao usuário.
