@@ -90,8 +90,9 @@ export default function MonthlyExpensesReport({ expenses, isLoading }: MonthlyEx
           </TableBody>
           <UiTableFooter>
               <TableRow>
-                  <TableCell colSpan={7} className="text-right font-bold text-lg">Total do Mês</TableCell>
+                  <TableCell className="text-right font-bold text-lg">Total do Mês</TableCell>
                   <TableCell className="text-right font-bold text-lg">{formatCurrency(totalAmount)}</TableCell>
+                  <TableCell colSpan={6}></TableCell>
               </TableRow>
           </UiTableFooter>
         </Table>
