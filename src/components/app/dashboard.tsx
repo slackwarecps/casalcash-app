@@ -41,6 +41,7 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
   const totalExpenses = expenses.reduce((acc, exp) => acc + exp.amount, 0);
   const totalPaid = expenses.filter(e => e.isPaid).reduce((acc, exp) => acc + exp.amount, 0);
   const totalUnpaid = totalExpenses - totalPaid;
+  const pendingFixedExpenses = expenses.filter(e => e.tipoDespesa === 'recorrente' && !e.isPaid).length;
 
   const fabaoPaid = expenses
     .filter(e => e.paidBy === 'Fabão')
@@ -181,8 +182,8 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
           <CardDescription>Visão geral das finanças do casal para o mês selecionado.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <Card className="bg-background/70">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Total do Mês</CardTitle>
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -191,7 +192,7 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
                       <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
                   </CardContent>
               </Card>
-              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+              <Card className="bg-background/70">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Divisão por Dois</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -236,7 +237,7 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
                     <div className="text-2xl font-bold">{formatCurrency(tatiPreCredits)}</div>
                 </CardContent>
               </Card>
-              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+              <Card className="bg-background/70">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Empréstimos Ativos</CardTitle>
                     <FileStack className="h-4 w-4 text-muted-foreground" />
@@ -245,13 +246,22 @@ export default function Dashboard({ expenses, preCredits, loans, currentUser, se
                     <div className="text-2xl font-bold">{totalActiveLoans}</div>
                 </CardContent>
               </Card>
-              <Card className="bg-background/70 col-span-2 sm:col-span-1">
+              <Card className="bg-background/70">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Falta Pagar (Emp.)</CardTitle>
                     <HandCoins className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency(remainingLoanAmount)}</div>
+                </CardContent>
+              </Card>
+               <Card className="bg-background/70">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Fixas Pendentes</CardTitle>
+                    <CircleAlert className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{pendingFixedExpenses}</div>
                 </CardContent>
               </Card>
           </div>
