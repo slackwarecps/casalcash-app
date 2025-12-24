@@ -8,7 +8,7 @@ import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getAuth, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFirebaseApp } from '@/firebase';
+import { useFirebaseApp, useRemoteConfig } from '@/firebase';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -17,7 +17,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from 'react';
+import { getValue, asString } from 'firebase/remote-config';
+import { Badge } from '../ui/badge';
 
 interface AppHeaderProps {
   currentUser: User;
@@ -43,7 +46,19 @@ export default function AppHeader({
   onMonthChange
 }: AppHeaderProps) {
   const firebaseApp = useFirebaseApp();
+  const remoteConfig = useRemoteConfig();
   const router = useRouter();
+  const [appVersion, setAppVersion] = useState('');
+
+  useEffect(() => {
+    if (remoteConfig) {
+      const versionValue = getValue(remoteConfig, 'geral_versao_app');
+      const versionString = asString(versionValue);
+      if (versionString) {
+        setAppVersion(versionString);
+      }
+    }
+  }, [remoteConfig]);
 
   const handleLogout = async () => {
     if(!firebaseApp) return;
@@ -66,7 +81,10 @@ export default function AppHeader({
     <header className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg bg-card border shadow-sm">
       <div className="flex items-center gap-3 self-start md:self-center">
         <Landmark className="h-8 w-8 text-primary" />
-        <h1 className="text-4xl font-headline font-bold">CasalCash</h1>
+        <div className="flex flex-col">
+          <h1 className="text-4xl font-headline font-bold">CasalCash</h1>
+          {appVersion && <Badge variant="secondary" className="w-fit">{appVersion}</Badge>}
+        </div>
       </div>
       
       <div className="flex items-center gap-2">
@@ -105,25 +123,25 @@ export default function AppHeader({
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Gerenciamento</DropdownMenuLabel>
              <DropdownMenuSeparator />
-            <Link href="/perfil">
-              <DropdownMenuItem>
-                <UserIcon className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
+            <Link href="/perfil" passHref>
+                <DropdownMenuItem>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                </DropdownMenuItem>
             </Link>
-            <Link href="/recurring-expenses">
+            <Link href="/recurring-expenses" passHref>
               <DropdownMenuItem>
                 <Repeat className="mr-2 h-4 w-4" />
                 <span>Cadastro de Recorrentes</span>
               </DropdownMenuItem>
             </Link>
-             <Link href="/reports">
+             <Link href="/reports" passHref>
               <DropdownMenuItem>
                 <BarChart className="mr-2 h-4 w-4" />
                 <span>Relatório Geral</span>
               </DropdownMenuItem>
             </Link>
-             <Link href="/reports/fixed-expenses">
+             <Link href="/reports/fixed-expenses" passHref>
               <DropdownMenuItem>
                 <FileText className="mr-2 h-4 w-4" />
                 <span>Relatório Fixas</span>
