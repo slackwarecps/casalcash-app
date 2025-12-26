@@ -5,8 +5,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, BarChart, FileText, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import withAuth from '@/hoc/withAuth';
 
-export default function ReportsLandingPage() {
+function ReportsLandingPage() {
   const router = useRouter();
 
   return (
@@ -57,3 +58,5 @@ export default function ReportsLandingPage() {
     </main>
   );
 }
+
+export default withAuth(ReportsLandingPage);

@@ -122,13 +122,7 @@ export default function AppHeader({
              <Link href="/reports" passHref>
               <DropdownMenuItem>
                 <BarChart className="mr-2 h-4 w-4" />
-                <span>Relatório Geral</span>
-              </DropdownMenuItem>
-            </Link>
-             <Link href="/reports/fixed-expenses" passHref>
-              <DropdownMenuItem>
-                <FileText className="mr-2 h-4 w-4" />
-                <span>Relatório Fixas</span>
+                <span>Relatórios</span>
               </DropdownMenuItem>
             </Link>
             <Link href="/configuracao-geral" passHref>
@@ -171,5 +165,3 @@ export default function AppHeader({
     </header>
   );
 }
-
-    
