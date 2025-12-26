@@ -19,7 +19,7 @@ import SecureLS from 'secure-ls';
 import Link from 'next/link';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Email inválido.' }).default('fabio.alvaro@gmail.com'),
+  email: z.string().email({ message: 'Email inválido.' }).default('uva@teste.com.br'),
   password: z.string().min(6, { message: 'Senha deve ter no mínimo 6 caracteres.' }).default('senha123'),
 });
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: 'fabio.alvaro@gmail.com',
+      email: 'uva@teste.com.br',
       password: 'senha123',
     },
   });
@@ -174,7 +174,7 @@ export default function LoginPage() {
         if (error.code !== 'auth/popup-closed-by-user') {
           errorMessage = 'Falha na autenticação com Google. Tente novamente.';
         } else {
-            errorMessage = null; // Don't show error if user closes popup
+            errorMessage = 'A autenticação foi cancelada pelo usuário.'; // Don't show error if user closes popup
         }
       }
       if (errorMessage) {
