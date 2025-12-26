@@ -15,6 +15,10 @@ interface FirestoreDoc {
     familyId?: string;
 }
 
+export interface Configuration {
+  validEmails: string[];
+}
+
 export interface Expense extends FirestoreDoc {
   id: string;
   description: string;
@@ -69,3 +73,5 @@ export interface RecurringExpense extends FirestoreDoc {
   split: SplitType;
   paidBy: User;
 }
+
+    

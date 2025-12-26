@@ -1,6 +1,6 @@
 "use client"
 
-import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2, PiggyBank, Menu, BarChart, FileText, User as UserIcon } from 'lucide-react';
+import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2, PiggyBank, Menu, BarChart, FileText, User as UserIcon, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { User } from '@/lib/types';
 import { format, addMonths, subMonths } from 'date-fns';
@@ -131,6 +131,12 @@ export default function AppHeader({
                 <span>Relatório Fixas</span>
               </DropdownMenuItem>
             </Link>
+            <Link href="/configuracao-geral" passHref>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações Gerais</span>
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem onClick={onApplyRecurring}>
                <CheckCircle className="mr-2 h-4 w-4" />
               <span>Aplicar Recorrentes</span>
@@ -165,3 +171,5 @@ export default function AppHeader({
     </header>
   );
 }
+
+    
