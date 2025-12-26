@@ -23,38 +23,34 @@ export default function ReportsLandingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Link href="/reports/relatorio-despesas-realizadas" passHref legacyBehavior>
-            <a>
-              <Card className="hover:bg-accent hover:border-primary transition-colors cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <BarChart className="h-8 w-8 text-primary" />
-                    <div>
-                      <CardTitle className="text-xl">Relatório Geral de Despesas</CardTitle>
-                      <CardDescription>Visualize todos os lançamentos do mês em um único lugar.</CardDescription>
-                    </div>
+          <Link href="/reports/relatorio-despesas-realizadas">
+            <Card className="hover:bg-accent hover:border-primary transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <BarChart className="h-8 w-8 text-primary" />
+                  <div>
+                    <CardTitle className="text-xl">Relatório Geral de Despesas</CardTitle>
+                    <CardDescription>Visualize todos os lançamentos do mês em um único lugar.</CardDescription>
                   </div>
-                  <ChevronRight className="h-6 w-6 text-muted-foreground" />
-                </CardHeader>
-              </Card>
-            </a>
+                </div>
+                <ChevronRight className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+            </Card>
           </Link>
 
-          <Link href="/reports/fixed-expenses" passHref legacyBehavior>
-            <a>
-              <Card className="hover:bg-accent hover:border-primary transition-colors cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <div>
-                      <CardTitle className="text-xl">Relatório de Despesas Fixas</CardTitle>
-                      <CardDescription>Acompanhe os gastos recorrentes e planejados do mês.</CardDescription>
-                    </div>
+          <Link href="/reports/fixed-expenses">
+            <Card className="hover:bg-accent hover:border-primary transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <div>
+                    <CardTitle className="text-xl">Relatório de Despesas Fixas</CardTitle>
+                    <CardDescription>Acompanhe os gastos recorrentes e planejados do mês.</CardDescription>
                   </div>
-                  <ChevronRight className="h-6 w-6 text-muted-foreground" />
-                </CardHeader>
-              </Card>
-            </a>
+                </div>
+                <ChevronRight className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+            </Card>
           </Link>
         </CardContent>
       </Card>

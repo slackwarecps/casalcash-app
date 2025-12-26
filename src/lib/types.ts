@@ -11,6 +11,8 @@ export type SplitType = "50/50" | "100% Fabão" | "100% Tati";
 
 interface FirestoreDoc {
     members?: { [key: string]: 'owner' | 'editor' | 'viewer' };
+    creator?: string;
+    familyId?: string;
 }
 
 export interface Expense extends FirestoreDoc {

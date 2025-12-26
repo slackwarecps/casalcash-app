@@ -2,13 +2,11 @@
 
 import { Landmark, PlusCircle, ChevronLeft, ChevronRight, LogOut, Repeat, CheckCircle, Trash2, PiggyBank, Menu, BarChart, FileText, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { User } from '@/lib/types';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getAuth, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFirebaseApp, useRemoteConfig } from '@/firebase';
+import { useRemoteConfig, useUser } from '@/firebase';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -19,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '../ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 interface AppHeaderProps {
   currentUser: User;
@@ -43,19 +43,12 @@ export default function AppHeader({
   selectedMonth,
   onMonthChange
 }: AppHeaderProps) {
-  const firebaseApp = useFirebaseApp();
   const { values: remoteConfigValues } = useRemoteConfig();
+  const { user } = useUser();
   const router = useRouter();
 
   const appVersion = remoteConfigValues['geral_versao_app'];
 
-  const handleLogout = async () => {
-    if(!firebaseApp) return;
-    const auth = getAuth(firebaseApp);
-    await signOut(auth);
-    router.push('/login');
-  };
-  
   const handlePreviousMonth = () => {
     onMonthChange(subMonths(selectedMonth, 1));
   };
@@ -65,6 +58,8 @@ export default function AppHeader({
   };
   
   const monthName = format(selectedMonth, 'MMMM yyyy', { locale: ptBR });
+  
+  const isGoogleSignIn = user?.providerData.some(provider => provider.providerId === 'google.com');
 
   return (
     <header className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg bg-card border shadow-sm">
@@ -149,14 +144,23 @@ export default function AppHeader({
         
         <Link href="/perfil" passHref>
           <Button variant="ghost" size="icon">
-            <UserIcon className="text-muted-foreground" />
+            <Avatar className="h-8 w-8">
+              {isGoogleSignIn && user?.photoURL ? (
+                <AvatarImage src={user.photoURL} alt={user.displayName || 'User Avatar'} />
+              ) : null}
+              <AvatarFallback>
+                <UserIcon className="text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
             <span className="sr-only">Perfil</span>
           </Button>
         </Link>
-        <Button variant="ghost" size="icon" onClick={handleLogout}>
-          <LogOut className="text-muted-foreground" />
-          <span className="sr-only">Sair</span>
-        </Button>
+        <Link href="/logout" passHref>
+            <Button variant="ghost" size="icon">
+                <LogOut className="text-muted-foreground" />
+                <span className="sr-only">Sair</span>
+            </Button>
+        </Link>
       </div>
     </header>
   );

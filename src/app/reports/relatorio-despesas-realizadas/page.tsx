@@ -11,6 +11,7 @@ import { collection, Timestamp, doc } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -85,6 +86,16 @@ export default function ReportsPage() {
         isLoading={isLoadingExpenses}
         onDelete={handleDeleteExpense} 
       />
+
+      <Link href="/expenses/new">
+        <Button
+          className="fixed bottom-8 right-8 h-16 w-16 rounded-full shadow-lg"
+          size="icon"
+        >
+          <Plus className="h-8 w-8" />
+          <span className="sr-only">Adicionar Despesa</span>
+        </Button>
+      </Link>
     </main>
   );
 }
