@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Landmark, LogIn, ArrowRight, Wallet, HandCoins, Sparkles } from 'lucide-react';
+import { Landmark, LogIn, ArrowRight, Wallet, HandCoins, Sparkles, Loader2 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -37,7 +37,17 @@ export default function LandingPage() {
     }
   }, [user, isUserLoading, router]);
 
+   if (isUserLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </main>
+    );
+  }
+
   // Only render the landing page if the user is definitively not logged in.
+  // The 'user' object check is removed from the loading condition to prevent showing a loader
+  // when the user is simply not logged in.
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-sm">

@@ -48,14 +48,16 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/home-logada');
-    }
-  }, [user, isUserLoading, router]);
+  // This useEffect was causing premature redirects.
+  // It's removed to allow handleUserSession to complete its validation.
+  // useEffect(() => {
+  //   if (!isUserLoading && user) {
+  //     router.push('/home-logada');
+  //   }
+  // }, [user, isUserLoading, router]);
 
   async function handleUserSession(userCredential: UserCredential) {
-    if (!firestore) return;
+    if (!firestore || !auth) return;
     const user = userCredential.user;
 
     // 0. Check if email is valid
@@ -65,20 +67,15 @@ export default function LoginPage() {
       const validEmails = configDoc.data()?.validEmails || [];
       if (!user.email || !validEmails.includes(user.email)) {
         setAuthError('Você não está na lista de usuários beta. Procure o Fabio para ser incluído.');
-        if(auth) {
-          await auth.signOut(); // Log out the user
-        }
+        await auth.signOut(); // Log out the user to prevent inconsistent state
         router.push('/pagina-azul');
-        return;
+        return; // IMPORTANT: Stop execution here
       }
     } else {
-        // If config doc doesn't exist, maybe allow only a master user or deny all
         setAuthError('Configuração de usuários não encontrada. Contate o administrador.');
-        if(auth) {
-          await auth.signOut();
-        }
+        await auth.signOut();
         router.push('/pagina-azul');
-        return;
+        return; // IMPORTANT: Stop execution here
     }
     
     // 1. Check if user profile exists, if not, create it
@@ -95,7 +92,7 @@ export default function LoginPage() {
         familyId: null,
       };
       await setDoc(userDocRef, newUserProfile);
-      userData = newUserProfile; // Use the new data for the next step
+      userData = newUserProfile;
     }
 
     let finalFamilyId = userData?.familyId;
@@ -103,7 +100,7 @@ export default function LoginPage() {
     // 2. Check if user has a family, if not, create one and assign it
     if (userData && !userData.familyId) {
         const familiesCollectionRef = collection(firestore, 'families');
-        const newFamilyDocRef = doc(familiesCollectionRef); // Create a new doc with a random ID
+        const newFamilyDocRef = doc(familiesCollectionRef);
         
         const newFamily = {
             id: newFamilyDocRef.id,
@@ -112,8 +109,6 @@ export default function LoginPage() {
         };
 
         await setDoc(newFamilyDocRef, newFamily);
-
-        // Update the user's familyId
         await setDoc(userDocRef, { familyId: newFamily.id }, { merge: true });
         finalFamilyId = newFamily.id;
     }
@@ -129,6 +124,7 @@ export default function LoginPage() {
       ls.set('familyId', finalFamilyId);
     }
     
+    // Only redirect AFTER all validation is successful
     router.push('/home-logada');
   }
 
@@ -174,7 +170,7 @@ export default function LoginPage() {
         if (error.code !== 'auth/popup-closed-by-user') {
           errorMessage = 'Falha na autenticação com Google. Tente novamente.';
         } else {
-            errorMessage = 'A autenticação foi cancelada pelo usuário.'; // Don't show error if user closes popup
+            errorMessage = ''; // Don't show error if user closes popup
         }
       }
       if (errorMessage) {

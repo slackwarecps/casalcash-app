@@ -11,12 +11,8 @@ function HomeLogadaPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
+  // The withAuth HOC now handles the redirect logic if user is not logged in.
+  // This component will only render if the user is authenticated.
   if (isUserLoading || !user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
