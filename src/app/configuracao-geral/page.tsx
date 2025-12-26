@@ -26,7 +26,6 @@ import { useDoc, useFirestore, useUser, useMemoFirebase, setDocumentNonBlocking 
 import { doc } from 'firebase/firestore';
 import type { Configuration } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import withAuth from '@/hoc/withAuth';
 
 const CONFIG_ID = 'validEmails';
 
@@ -41,9 +40,9 @@ function ConfiguracaoGeralPage() {
   const { toast } = useToast();
 
   const configDocRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!firestore) return null;
     return doc(firestore, 'configuration', CONFIG_ID);
-  }, [firestore, user]);
+  }, [firestore]);
 
   const { data: configData, isLoading } = useDoc<Configuration>(configDocRef);
 
@@ -169,6 +168,4 @@ function ConfiguracaoGeralPage() {
   );
 }
 
-export default withAuth(ConfiguracaoGeralPage);
-
-    
+export default ConfiguracaoGeralPage;

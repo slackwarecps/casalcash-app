@@ -57,6 +57,29 @@ export default function LoginPage() {
   async function handleUserSession(userCredential: UserCredential) {
     if (!firestore) return;
     const user = userCredential.user;
+
+    // 0. Check if email is valid
+    const configDocRef = doc(firestore, 'configuration', 'validEmails');
+    const configDoc = await getDoc(configDocRef);
+    if (configDoc.exists()) {
+      const validEmails = configDoc.data()?.validEmails || [];
+      if (!user.email || !validEmails.includes(user.email)) {
+        setAuthError('Você não está na lista de usuários beta. Procure o Fabio para ser incluído.');
+        if(auth) {
+          await auth.signOut(); // Log out the user
+        }
+        router.push('/pagina-azul');
+        return;
+      }
+    } else {
+        // If config doc doesn't exist, maybe allow only a master user or deny all
+        setAuthError('Configuração de usuários não encontrada. Contate o administrador.');
+        if(auth) {
+          await auth.signOut();
+        }
+        router.push('/pagina-azul');
+        return;
+    }
     
     // 1. Check if user profile exists, if not, create it
     const userDocRef = doc(firestore, 'users', user.uid);
@@ -186,7 +209,7 @@ export default function LoginPage() {
             <CardContent className="space-y-4">
               {authError && (
                 <Alert variant="destructive">
-                  <AlertTitle>Erro de Login</AlertTitle>
+                  <AlertTitle>Acesso Negado</AlertTitle>
                   <AlertDescription>{authError}</AlertDescription>
                 </Alert>
               )}
