@@ -58,6 +58,14 @@ export default function LoanDetailPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: '',
+      totalAmount: 0,
+      lender: 'Fabão',
+      borrower: 'Tati',
+      installments: 1,
+      date: new Date().toLocaleDateString('pt-BR'),
+    }
   });
 
   useEffect(() => {
@@ -71,11 +79,13 @@ export default function LoanDetailPage() {
         date: (loanData.date as Timestamp).toDate().toLocaleDateString('pt-BR'),
       });
       // Convert Timestamps to Dates for the UI state
-      setLocalInstallments(loanData.installmentDetails.map(inst => ({
+      const installmentsWithDates = loanData.installmentDetails.map(inst => ({
         ...inst,
         dueDate: (inst.dueDate as Timestamp).toDate(),
         paidDate: inst.paidDate ? (inst.paidDate as Timestamp).toDate() : null,
-      })));
+      }));
+      setLocalInstallments(installmentsWithDates);
+      form.setValue('installments', installmentsWithDates.length);
     }
   }, [loanData, form]);
 
@@ -109,56 +119,33 @@ export default function LoanDetailPage() {
   }
 
   const handleDeleteInstallment = (installmentId: string) => {
-    setLocalInstallments(prev => prev.filter(inst => inst.id !== installmentId));
+    const updatedInstallments = localInstallments.filter(inst => inst.id !== installmentId);
+    setLocalInstallments(updatedInstallments);
+    // Update the form value to keep it controlled
+    form.setValue('installments', updatedInstallments.length);
   };
   
   const handleSaveChanges = (values: z.infer<typeof formSchema>) => {
-    if (!loanData || !loanDocRef) return;
+    if (!loanData || !loanDocRef || !firestore) return;
   
-    const paidCount = localInstallments.filter(inst => inst.isPaid).length;
     const parsedDate = parse(values.date, 'dd/MM/yyyy', new Date());
   
-    let finalInstallments = [...localInstallments]; // Make a mutable copy
+    // Always use the latest state from localInstallments
+    const numInstallments = localInstallments.length;
+    const installmentAmount = numInstallments > 0 ? values.totalAmount / numInstallments : 0;
   
-    // Check if the number of installments has changed
-    const installmentCountChanged = finalInstallments.length !== values.installments;
-  
-    // Update the number of installments in the form to reflect deletions
-    if (finalInstallments.length !== form.getValues('installments')) {
-      form.setValue('installments', finalInstallments.length);
-      values.installments = finalInstallments.length;
-    }
-    
-    const installmentAmount = values.totalAmount / values.installments;
-  
-    // Recalculate installments if something significant has changed
-    if (values.totalAmount !== loanData.totalAmount || installmentCountChanged) {
-        finalInstallments = Array.from({ length: values.installments }, (_, i) => {
-            const existingInstallment = localInstallments[i];
-            return {
-                id: existingInstallment?.id || doc(collection(firestore, 'temp')).id,
-                loanId: loanData.id,
-                installmentNumber: i + 1,
-                amount: installmentAmount,
-                dueDate: addMonths(parsedDate, i),
-                isPaid: existingInstallment?.isPaid || false,
-                paidDate: existingInstallment?.paidDate || null,
-                paymentDetails: existingInstallment?.paymentDetails || '',
-            };
-        });
-    } else {
-       // If only amount changed, just update amounts
-        finalInstallments = finalInstallments.map((inst, i) => ({
-            ...inst,
-            installmentNumber: i + 1, // Renumber
-            amount: installmentAmount,
-        }));
-    }
+    // Re-calculate and re-number all installments based on the current local state
+    const finalInstallments = localInstallments.map((inst, i) => ({
+      ...inst,
+      installmentNumber: i + 1,
+      amount: installmentAmount,
+      dueDate: addMonths(parsedDate, i), // Also recalculate due dates if start date changed
+    }));
   
     const firestoreReadyLoan = {
       ...loanData, // Preserve original data
       ...values, // Apply form values
-      installments: finalInstallments.length, // Ensure count is correct
+      installments: numInstallments, // Ensure count is correct
       date: Timestamp.fromDate(parsedDate),
       paidInstallments: finalInstallments.filter(inst => inst.isPaid).length,
       installmentDetails: finalInstallments.map(inst => ({
@@ -180,7 +167,7 @@ export default function LoanDetailPage() {
     );
   }
   
-  const progress = (localInstallments.filter(i => i.isPaid).length / form.getValues('installments')) * 100;
+  const progress = localInstallments.length > 0 ? (localInstallments.filter(i => i.isPaid).length / localInstallments.length) * 100 : 0;
   const totalPaidInstallments = localInstallments.filter(i => i.isPaid).length;
 
   return (
@@ -234,7 +221,7 @@ export default function LoanDetailPage() {
                           <FormItem>
                           <FormLabel>Nº de Parcelas</FormLabel>
                           <FormControl>
-                              <Input type="number" step="1" {...field} value={localInstallments.length} readOnly />
+                              <Input type="number" {...field} readOnly />
                           </FormControl>
                           <FormMessage />
                           </FormItem>
