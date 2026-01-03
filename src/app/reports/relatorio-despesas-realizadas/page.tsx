@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
@@ -94,31 +95,40 @@ export default function ReportsPage() {
             <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-             <Select value={paidByFilter} onValueChange={(value: User | 'all') => setPaidByFilter(value)}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por pagador..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Pagadores</SelectItem>
-                <SelectItem value="Fabão">Fabão</SelectItem>
-                <SelectItem value="Tati">Tati</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={splitTypeFilter} onValueChange={(value: SplitType | 'all') => setSplitTypeFilter(value)}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por rateio..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos Rateios</SelectItem>
-                <SelectItem value="50/50">50/50</SelectItem>
-                <SelectItem value="100% Fabão">100% Fabão</SelectItem>
-                <SelectItem value="100% Tati">100% Tati</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={tipoDespesaFilter} onValueChange={(value: 'all' | 'pontual' | 'recorrente') => setTipoDespesaFilter(value)}>
-              <SelectTrigger><SelectValue placeholder="Filtrar por tipo..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Tipos</SelectItem>
-                <SelectItem value="pontual">Variável</SelectItem>
-                <SelectItem value="recorrente">Fixa</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="paidByFilter">Pago por</Label>
+              <Select value={paidByFilter} onValueChange={(value: User | 'all') => setPaidByFilter(value)}>
+                <SelectTrigger id="paidByFilter"><SelectValue placeholder="Filtrar por pagador..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Pagadores</SelectItem>
+                  <SelectItem value="Fabão">Fabão</SelectItem>
+                  <SelectItem value="Tati">Tati</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+               <Label htmlFor="splitTypeFilter">Tipo de Rateio</Label>
+               <Select value={splitTypeFilter} onValueChange={(value: SplitType | 'all') => setSplitTypeFilter(value)}>
+                <SelectTrigger id="splitTypeFilter"><SelectValue placeholder="Filtrar por rateio..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Rateios</SelectItem>
+                  <SelectItem value="50/50">50/50</SelectItem>
+                  <SelectItem value="100% Fabão">100% Fabão</SelectItem>
+                  <SelectItem value="100% Tati">100% Tati</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tipoDespesaFilter">Tipo de Despesa</Label>
+              <Select value={tipoDespesaFilter} onValueChange={(value: 'all' | 'pontual' | 'recorrente') => setTipoDespesaFilter(value)}>
+                <SelectTrigger id="tipoDespesaFilter"><SelectValue placeholder="Filtrar por tipo..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  <SelectItem value="pontual">Variável</SelectItem>
+                  <SelectItem value="recorrente">Fixa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
         </CardContent>
        </Card>
       
