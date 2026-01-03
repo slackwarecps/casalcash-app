@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, parse, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc, Timestamp, collection } from 'firebase/firestore';
@@ -21,6 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AddInstallmentPaymentDetailsDialog from '@/components/app/add-installment-payment-details-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
@@ -107,17 +108,31 @@ export default function LoanDetailPage() {
     setEditingPaymentFor(null); // Close the dialog
   }
 
+  const handleDeleteInstallment = (installmentId: string) => {
+    setLocalInstallments(prev => prev.filter(inst => inst.id !== installmentId));
+  };
+  
   const handleSaveChanges = (values: z.infer<typeof formSchema>) => {
     if (!loanData || !loanDocRef) return;
-
+  
     const paidCount = localInstallments.filter(inst => inst.isPaid).length;
     const parsedDate = parse(values.date, 'dd/MM/yyyy', new Date());
-
-    let finalInstallments = localInstallments;
-
-    // Recalculate installments if the amount or number of installments changed
-    if (values.totalAmount !== loanData.totalAmount || values.installments !== loanData.installments) {
-        const installmentAmount = values.totalAmount / values.installments;
+  
+    let finalInstallments = [...localInstallments]; // Make a mutable copy
+  
+    // Check if the number of installments has changed
+    const installmentCountChanged = finalInstallments.length !== values.installments;
+  
+    // Update the number of installments in the form to reflect deletions
+    if (finalInstallments.length !== form.getValues('installments')) {
+      form.setValue('installments', finalInstallments.length);
+      values.installments = finalInstallments.length;
+    }
+    
+    const installmentAmount = values.totalAmount / values.installments;
+  
+    // Recalculate installments if something significant has changed
+    if (values.totalAmount !== loanData.totalAmount || installmentCountChanged) {
         finalInstallments = Array.from({ length: values.installments }, (_, i) => {
             const existingInstallment = localInstallments[i];
             return {
@@ -131,13 +146,21 @@ export default function LoanDetailPage() {
                 paymentDetails: existingInstallment?.paymentDetails || '',
             };
         });
+    } else {
+       // If only amount changed, just update amounts
+        finalInstallments = finalInstallments.map((inst, i) => ({
+            ...inst,
+            installmentNumber: i + 1, // Renumber
+            amount: installmentAmount,
+        }));
     }
-
+  
     const firestoreReadyLoan = {
       ...loanData, // Preserve original data
       ...values, // Apply form values
+      installments: finalInstallments.length, // Ensure count is correct
       date: Timestamp.fromDate(parsedDate),
-      paidInstallments: paidCount,
+      paidInstallments: finalInstallments.filter(inst => inst.isPaid).length,
       installmentDetails: finalInstallments.map(inst => ({
         ...inst,
         dueDate: Timestamp.fromDate(inst.dueDate as Date),
@@ -211,7 +234,7 @@ export default function LoanDetailPage() {
                           <FormItem>
                           <FormLabel>Nº de Parcelas</FormLabel>
                           <FormControl>
-                              <Input type="number" step="1" {...field} />
+                              <Input type="number" step="1" {...field} value={localInstallments.length} readOnly />
                           </FormControl>
                           <FormMessage />
                           </FormItem>
@@ -277,7 +300,7 @@ export default function LoanDetailPage() {
                   <div className="flex flex-col gap-2 mb-6">
                       <Progress value={progress} className="w-full h-3" />
                       <span className="text-sm text-muted-foreground">
-                          {totalPaidInstallments} de {form.getValues('installments')} parcelas pagas ({formatCurrency(form.getValues('totalAmount'))})
+                          {totalPaidInstallments} de {localInstallments.length} parcelas pagas ({formatCurrency(form.getValues('totalAmount'))})
                       </span>
                   </div>
 
@@ -290,10 +313,11 @@ export default function LoanDetailPage() {
                         <TableHead>Vencimento</TableHead>
                         <TableHead>Pagamento</TableHead>
                         <TableHead>Detalhes</TableHead>
+                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {localInstallments.map((installment) => (
+                      {localInstallments.map((installment, index) => (
                         <TableRow key={installment.id}>
                           <TableCell>
                             <Checkbox
@@ -301,13 +325,36 @@ export default function LoanDetailPage() {
                               onCheckedChange={(checked) => handleStatusChange(installment, !!checked)}
                             />
                           </TableCell>
-                          <TableCell>{installment.installmentNumber}</TableCell>
+                          <TableCell>{index + 1}</TableCell>
                           <TableCell>{formatCurrency(installment.amount)}</TableCell>
                           <TableCell>{format(installment.dueDate as Date, "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                           <TableCell>
                             {installment.paidDate ? format(installment.paidDate as Date, "dd/MM/yyyy", { locale: ptBR }) : 'Pendente'}
                           </TableCell>
                            <TableCell className="text-sm text-muted-foreground">{installment.paymentDetails || '-'}</TableCell>
+                           <TableCell className="text-right">
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Excluir Parcela?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a parcela {index + 1}? O valor total será redistribuído entre as parcelas restantes.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteInstallment(installment.id)}>
+                                        Sim, excluir
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
