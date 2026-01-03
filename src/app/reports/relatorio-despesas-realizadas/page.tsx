@@ -22,6 +22,7 @@ export default function ReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [paidByFilter, setPaidByFilter] = useState<User | 'all'>('all');
   const [splitTypeFilter, setSplitTypeFilter] = useState<SplitType | 'all'>('all');
+  const [tipoDespesaFilter, setTipoDespesaFilter] = useState<'all' | 'pontual' | 'recorrente'>('all');
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -62,12 +63,13 @@ export default function ReportsPage() {
       })
       .filter(exp => paidByFilter === 'all' || exp.paidBy === paidByFilter)
       .filter(exp => splitTypeFilter === 'all' || exp.split === splitTypeFilter)
+      .filter(exp => tipoDespesaFilter === 'all' || exp.tipoDespesa === tipoDespesaFilter)
       .map(exp => ({
         ...exp,
         date: (exp.date as Timestamp).toDate()
       }))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [expenses, selectedMonth, paidByFilter, splitTypeFilter]);
+  }, [expenses, selectedMonth, paidByFilter, splitTypeFilter, tipoDespesaFilter]);
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -91,7 +93,7 @@ export default function ReportsPage() {
         <CardHeader>
             <CardTitle>Filtros</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              <Select value={paidByFilter} onValueChange={(value: User | 'all') => setPaidByFilter(value)}>
               <SelectTrigger><SelectValue placeholder="Filtrar por pagador..." /></SelectTrigger>
               <SelectContent>
@@ -107,6 +109,14 @@ export default function ReportsPage() {
                 <SelectItem value="50/50">50/50</SelectItem>
                 <SelectItem value="100% Fabão">100% Fabão</SelectItem>
                 <SelectItem value="100% Tati">100% Tati</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={tipoDespesaFilter} onValueChange={(value: 'all' | 'pontual' | 'recorrente') => setTipoDespesaFilter(value)}>
+              <SelectTrigger><SelectValue placeholder="Filtrar por tipo..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
+                <SelectItem value="pontual">Variável</SelectItem>
+                <SelectItem value="recorrente">Fixa</SelectItem>
               </SelectContent>
             </Select>
         </CardContent>
