@@ -5,19 +5,22 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import MonthlyExpensesReport from '@/components/app/monthly-expenses-report';
-import type { Expense } from '@/lib/types';
+import type { Expense, SplitType, User } from '@/lib/types';
 import { useCollection, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, Timestamp, doc } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, isWithinInterval, addMonths, subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const COUPLE_ID = 'casalUnico'; // Hardcoded for simplicity
 
 export default function ReportsPage() {
   const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [paidByFilter, setPaidByFilter] = useState<User | 'all'>('all');
+  const [splitTypeFilter, setSplitTypeFilter] = useState<SplitType | 'all'>('all');
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -56,12 +59,14 @@ export default function ReportsPage() {
         const expDate = (exp.date as Timestamp).toDate();
         return isWithinInterval(expDate, { start, end });
       })
+      .filter(exp => paidByFilter === 'all' || exp.paidBy === paidByFilter)
+      .filter(exp => splitTypeFilter === 'all' || exp.split === splitTypeFilter)
       .map(exp => ({
         ...exp,
         date: (exp.date as Timestamp).toDate()
       }))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [expenses, selectedMonth]);
+  }, [expenses, selectedMonth, paidByFilter, splitTypeFilter]);
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -80,6 +85,31 @@ export default function ReportsPage() {
           </Button>
         </div>
       </div>
+
+       <Card className="mb-4">
+        <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-4">
+             <Select value={paidByFilter} onValueChange={(value: User | 'all') => setPaidByFilter(value)}>
+              <SelectTrigger><SelectValue placeholder="Filtrar por pagador..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Pagadores</SelectItem>
+                <SelectItem value="Fabão">Fabão</SelectItem>
+                <SelectItem value="Tati">Tati</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={splitTypeFilter} onValueChange={(value: SplitType | 'all') => setSplitTypeFilter(value)}>
+              <SelectTrigger><SelectValue placeholder="Filtrar por rateio..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Rateios</SelectItem>
+                <SelectItem value="50/50">50/50</SelectItem>
+                <SelectItem value="100% Fabão">100% Fabão</SelectItem>
+                <SelectItem value="100% Tati">100% Tati</SelectItem>
+              </SelectContent>
+            </Select>
+        </CardContent>
+       </Card>
       
       <MonthlyExpensesReport 
         expenses={filteredExpenses} 
